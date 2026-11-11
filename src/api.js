@@ -7,6 +7,77 @@ function checkConfig() {
 }
 
 // ==========================================
+// USUÁRIOS E AUTENTICAÇÃO (Número e Senha)
+// ==========================================
+export const INITIAL_USERS = [
+  {
+    id: 1,
+    name: 'Leonardo Henrique',
+    phone: '31999768062',
+    password: 'Leon@rdo9987',
+    role: 'Coordenação',
+    person_id: 13
+  },
+  {
+    id: 2,
+    name: 'Welson',
+    phone: '3175284359',
+    password: 'Welson123',
+    role: 'Coordenação / Líder',
+    person_id: 14
+  }
+];
+
+export async function loginUser(rawPhone, password) {
+  const cleanPhone = String(rawPhone || '').replace(/\D/g, '');
+  if (!cleanPhone || !password) {
+    throw new Error('Informe seu número e senha.');
+  }
+
+  // 1. Tentar autenticar pelo Supabase
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('app_users')
+        .select('*')
+        .eq('phone', cleanPhone)
+        .eq('password', password)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          name: data.name,
+          phone: data.phone,
+          role: data.role || 'Voluntário',
+          personId: data.person_id
+        };
+      }
+    } catch (err) {
+      console.warn('Erro ao consultar app_users no Supabase, verificando credenciais locais:', err);
+    }
+  }
+
+  // 2. Fallback para credenciais iniciais
+  const localMatch = INITIAL_USERS.find(u => {
+    const uPhone = u.phone.replace(/\D/g, '');
+    return uPhone === cleanPhone && u.password === password;
+  });
+
+  if (localMatch) {
+    return {
+      id: localMatch.id,
+      name: localMatch.name,
+      phone: localMatch.phone,
+      role: localMatch.role,
+      personId: localMatch.person_id
+    };
+  }
+
+  throw new Error('Número ou senha incorretos.');
+}
+
+// ==========================================
 // PESSOAS / VOLUNTÁRIOS
 // ==========================================
 export async function getPeople() {
@@ -177,7 +248,10 @@ export async function getScales() {
         id,
         person_id,
         activity_name,
-        confirmed
+        confirmed,
+        status,
+        cancellation_reason,
+        cancelled_at
       )
     `)
     .order('date', { ascending: true });
@@ -195,7 +269,10 @@ export async function getScales() {
       id: a.id,
       person: a.person_id,
       activity: a.activity_name,
-      confirmed: a.confirmed
+      confirmed: a.confirmed,
+      status: a.status || (a.confirmed ? 'confirmed' : 'pending'),
+      cancellationReason: a.cancellation_reason || null,
+      cancelledAt: a.cancelled_at || null
     }))
   }));
 }
@@ -221,7 +298,8 @@ export async function createScale(scale, assignments) {
       scale_id: newScale.id,
       person_id: Number(a.person),
       activity_name: a.activity,
-      confirmed: false
+      confirmed: false,
+      status: 'pending'
     }));
 
     const { error: assignError } = await supabase
@@ -261,7 +339,10 @@ export async function updateScale(id, scale, assignments) {
       scale_id: id,
       person_id: Number(a.person),
       activity_name: a.activity,
-      confirmed: Boolean(a.confirmed)
+      confirmed: Boolean(a.confirmed),
+      status: a.status || (a.confirmed ? 'confirmed' : 'pending'),
+      cancellation_reason: a.cancellationReason || null,
+      cancelled_at: a.cancelledAt || null
     }));
 
     const { error: assignError } = await supabase
@@ -286,7 +367,42 @@ export async function confirmAssignment(assignmentId) {
   checkConfig();
   const { error } = await supabase
     .from('scale_assignments')
-    .update({ confirmed: true })
+    .update({
+      confirmed: true,
+      status: 'confirmed',
+      cancellation_reason: null,
+      cancelled_at: null
+    })
+    .eq('id', assignmentId);
+
+  if (error) throw error;
+}
+
+export async function cancelAssignment(assignmentId, reason) {
+  checkConfig();
+  const { error } = await supabase
+    .from('scale_assignments')
+    .update({
+      confirmed: false,
+      status: 'cancelled',
+      cancellation_reason: reason || 'Cancelado pelo voluntário',
+      cancelled_at: new Date().toISOString()
+    })
+    .eq('id', assignmentId);
+
+  if (error) throw error;
+}
+
+export async function reopenAssignment(assignmentId) {
+  checkConfig();
+  const { error } = await supabase
+    .from('scale_assignments')
+    .update({
+      confirmed: true,
+      status: 'confirmed',
+      cancellation_reason: null,
+      cancelled_at: null
+    })
     .eq('id', assignmentId);
 
   if (error) throw error;
@@ -324,6 +440,7 @@ export function subscribeToRealtime(onChange) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'scales' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'scale_assignments' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_users' }, onChange)
     .subscribe();
 
   return channel;
