@@ -6,7 +6,8 @@ let people = [];
 let activities = [];
 let scales = [];
 let selectedVolunteerId = null;
-let month = new Date(2026, 10, 1);
+let month = new Date();
+month.setDate(1);
 let scaleTab = 'all';
 let currentUser = null;
 
@@ -284,8 +285,8 @@ function renderHome() {
   // Confirmações
   const totalAssignments = scales.reduce((acc, s) => acc + s.assignments.length, 0);
   const confirmedAssignments = scales.reduce((acc, s) => acc + s.assignments.filter(a => a.confirmed).length, 0);
-  const percent = totalAssignments > 0 ? Math.round((confirmedAssignments / totalAssignments) * 100) : 100;
-  document.getElementById('statConfirmations').textContent = percent + '%';
+  const percent = totalAssignments > 0 ? Math.round((confirmedAssignments / totalAssignments) * 100) : 0;
+  document.getElementById('statConfirmations').textContent = totalAssignments > 0 ? percent + '%' : '—';
   document.getElementById('pendingCount').textContent = Math.max(0, totalAssignments - confirmedAssignments);
 
   // Alerta de escalas para o usuário logado
@@ -1348,7 +1349,67 @@ function initAuth() {
   return false;
 }
 
+// ==========================================
+// TEMA ESCURO / CLARO
+// ==========================================
+function getInitialTheme() {
+  const saved = localStorage.getItem('servus_theme');
+  if (saved === 'dark' || saved === 'light') return saved;
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark';
+  }
+  return 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('servus_theme', theme);
+
+  const iconText = theme === 'dark' ? '☀️' : '🌙';
+  const labelText = theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro';
+
+  const btnApp = document.getElementById('btnThemeToggle');
+  const btnLogin = document.getElementById('btnLoginThemeToggle');
+
+  [btnApp, btnLogin].forEach(btn => {
+    if (!btn) return;
+    const iconSpan = btn.querySelector('.theme-icon');
+    if (iconSpan) iconSpan.textContent = iconText;
+    else btn.textContent = iconText;
+    btn.title = labelText;
+    btn.setAttribute('aria-label', labelText);
+  });
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+}
+
+function initTheme() {
+  const initial = getInitialTheme();
+  applyTheme(initial);
+
+  const btnApp = document.getElementById('btnThemeToggle');
+  const btnLogin = document.getElementById('btnLoginThemeToggle');
+
+  if (btnApp) btnApp.onclick = toggleTheme;
+  if (btnLogin) btnLogin.onclick = toggleTheme;
+
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!localStorage.getItem('servus_theme')) {
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+  }
+}
+
 function initEvents() {
+  // Inicializar Tema Escuro / Claro
+  initTheme();
+
   // Navegação da Sidebar
   document.querySelectorAll('.nav button').forEach(btn => {
     btn.addEventListener('click', () => navigate(btn.dataset.page));
