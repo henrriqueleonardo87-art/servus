@@ -57,6 +57,8 @@ export async function getPeople() {
     id: p.id,
     name: p.name,
     phone: p.phone || '',
+    email: p.email || '',
+    avatarUrl: p.avatar_url || '',
     area: p.area || (p.skills && p.skills.length ? p.skills.join(', ') : ''),
     initials: p.initials || p.name.split(' ').slice(0, 2).map(x => x[0]).join('').toUpperCase(),
     availability: p.availability || 'Disponível',
@@ -68,11 +70,29 @@ export async function getPeople() {
   }));
 }
 
+export async function getPersonCredentials(personId) {
+  checkConfig();
+  if (!personId) return null;
+  const { data, error } = await supabase
+    .from('app_users')
+    .select('id, phone, password, role, email')
+    .eq('person_id', personId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('Erro ao buscar credenciais:', error);
+    return null;
+  }
+  return data || null;
+}
+
 export async function createPerson(person) {
   checkConfig();
   const payload = {
     name: person.name,
     phone: person.phone || null,
+    email: person.email || null,
+    avatar_url: person.avatarUrl || null,
     area: person.area || null,
     initials: person.initials || person.name.split(' ').slice(0, 2).map(x => x[0]).join('').toUpperCase(),
     availability: person.availability || 'Disponível',
@@ -90,6 +110,22 @@ export async function createPerson(person) {
     .single();
 
   if (error) throw error;
+
+  // Se tiver senha e telefone, cria acesso no app_users
+  if (person.password && person.phone) {
+    const cleanPhone = String(person.phone).replace(/\D/g, '');
+    if (cleanPhone) {
+      await supabase.from('app_users').insert([{
+        name: person.name,
+        phone: cleanPhone,
+        password: person.password,
+        role: person.role || 'Voluntário',
+        email: person.email || null,
+        person_id: data.id
+      }]).select().maybeSingle();
+    }
+  }
+
   return data;
 }
 
@@ -98,6 +134,8 @@ export async function updatePerson(id, person) {
   const payload = {
     name: person.name,
     phone: person.phone || null,
+    email: person.email || null,
+    avatar_url: person.avatarUrl || null,
     area: person.area || null,
     initials: person.initials || person.name.split(' ').slice(0, 2).map(x => x[0]).join('').toUpperCase(),
     availability: person.availability || 'Disponível',
@@ -116,6 +154,41 @@ export async function updatePerson(id, person) {
     .single();
 
   if (error) throw error;
+
+  // Atualizar ou criar login no app_users
+  if (person.phone) {
+    const cleanPhone = String(person.phone).replace(/\D/g, '');
+    if (cleanPhone) {
+      const { data: existingUser } = await supabase
+        .from('app_users')
+        .select('id')
+        .or(`person_id.eq.${id},phone.eq.${cleanPhone}`)
+        .maybeSingle();
+
+      const userFields = {
+        name: person.name,
+        phone: cleanPhone,
+        role: person.role || 'Voluntário',
+        email: person.email || null,
+        person_id: id
+      };
+      if (person.password) {
+        userFields.password = person.password;
+      }
+
+      if (existingUser) {
+        await supabase
+          .from('app_users')
+          .update(userFields)
+          .eq('id', existingUser.id);
+      } else if (person.password) {
+        await supabase
+          .from('app_users')
+          .insert([userFields]);
+      }
+    }
+  }
+
   return data;
 }
 
@@ -409,4 +482,84 @@ export function subscribeToRealtime(onChange) {
     .subscribe();
 
   return channel;
+}
+
+// ==========================================
+// INTEGRAÇÃO COM GOOGLE AGENDA E CALENDÁRIO
+// ==========================================
+export function generateGoogleCalendarUrl(scale, assignment, person) {
+  if (!scale) return '';
+  const activityName = assignment?.activity || assignment?.activity_name || 'Serviço';
+  const personName = person?.name || 'Voluntário(a)';
+
+  const title = encodeURIComponent(`AD Bethânia: ${scale.title} · ${activityName}`);
+  const details = encodeURIComponent(
+    `Olá, ${personName}!\n\n` +
+    `Você está escalado(a) na Assembleia de Deus Regional Bethânia:\n` +
+    `• Função / Atividade: ${activityName}\n` +
+    `• Programação: ${scale.title} (${scale.type || 'Culto'})\n` +
+    `• Local: ${scale.place || 'Templo Principal - AD Regional Bethânia'}\n` +
+    `• Data: ${scale.date}\n` +
+    `• Horário: ${scale.time || '18:30'}\n\n` +
+    `Orientações: Procure chegar com pelo menos 30 minutos de antecedência.\n` +
+    `Que Deus abençoe o seu serviço!`
+  );
+  const location = encodeURIComponent(scale.place || 'Assembleia de Deus Regional Bethânia - Templo Principal');
+
+  const cleanDate = (scale.date || '').replace(/-/g, '');
+  const [hStr, mStr] = (scale.time || '18:30').split(':');
+  const h = Number(hStr) || 18;
+  const m = Number(mStr) || 30;
+
+  const startIso = `${cleanDate}T${String(h).padStart(2, '0')}${String(m).padStart(2, '0')}00`;
+  const endH = String((h + 2) % 24).padStart(2, '0');
+  const endIso = `${cleanDate}T${endH}${String(m).padStart(2, '0')}00`;
+
+  let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${details}&location=${location}`;
+  if (person?.email) {
+    url += `&add=${encodeURIComponent(person.email)}`;
+  }
+  return url;
+}
+
+export function downloadIcsFile(scale, assignment, person) {
+  if (!scale) return;
+  const activityName = assignment?.activity || assignment?.activity_name || 'Serviço';
+  const personName = person?.name || 'Voluntário';
+
+  const cleanDate = (scale.date || '').replace(/-/g, '');
+  const [hStr, mStr] = (scale.time || '18:30').split(':');
+  const h = Number(hStr) || 18;
+  const m = Number(mStr) || 30;
+
+  const startIso = `${cleanDate}T${String(h).padStart(2, '0')}${String(m).padStart(2, '0')}00`;
+  const endH = String((h + 2) % 24).padStart(2, '0');
+  const endIso = `${cleanDate}T${endH}${String(m).padStart(2, '0')}00`;
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//SERVUS//AD Regional Bethania//PT-BR',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:servus-${scale.id}-${assignment?.id || Date.now()}@adbethania.com`,
+    `DTSTAMP:${cleanDate}T000000Z`,
+    `DTSTART:${startIso}`,
+    `DTEND:${endIso}`,
+    `SUMMARY:AD Bethânia: ${scale.title} · ${activityName}`,
+    `DESCRIPTION:Escala de ${personName} como ${activityName} em ${scale.title}`,
+    `LOCATION:${scale.place || 'Assembleia de Deus Regional Bethânia'}`,
+    'STATUS:CONFIRMED',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `escala-${scale.title.toLowerCase().replace(/\s+/g, '-')}-${scale.date}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
