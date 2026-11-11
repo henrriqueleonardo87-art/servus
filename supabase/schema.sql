@@ -175,33 +175,20 @@ ON CONFLICT (id) DO UPDATE SET
 -- Ajustar sequence de activities
 SELECT setval('activities_id_seq', (SELECT COALESCE(MAX(id), 1) FROM activities));
 
--- Inserir Pessoas / Equipe
+-- Inserir Pessoas / Equipe Inicial
 INSERT INTO people (id, name, phone, area, initials, availability, birthday, skills) VALUES
-(1, 'Ana Clara', '(31) 98821-4401', 'Fotografia', 'AC', 'Disponível', '1995-11-14', ARRAY['Fotografia','Social media']),
-(2, 'Bruno Martins', '(31) 99102-8831', 'Áudio', 'BM', 'Disponível', '1992-12-03', ARRAY['Áudio','Projeção']),
-(3, 'Camila Souza', '(31) 98770-2210', 'Projeção', 'CS', 'Disponível', '1998-01-19', ARRAY['Projeção','Transmissão']),
-(4, 'Daniel Oliveira', '(31) 99811-7720', 'Transmissão', 'DO', 'Disponível', '1994-02-22', ARRAY['Transmissão','Vídeo']),
-(5, 'Eduarda Lima', '(31) 99221-6630', 'Social media', 'EL', 'Disponível', '1997-03-08', ARRAY['Social media','Design']),
-(6, 'Felipe Costa', '(31) 98442-1190', 'Áudio', 'FC', 'Disponível', '1993-04-17', ARRAY['Áudio']),
-(7, 'Gabriela Alves', '(31) 98813-4420', 'Fotografia', 'GA', 'Disponível', '1996-05-11', ARRAY['Fotografia','Vídeo']),
-(8, 'Henrique Rocha', '(31) 99771-0032', 'Projeção', 'HR', 'Disponível', '1991-06-26', ARRAY['Projeção','Direção de mídia']),
-(9, 'Isabela Mendes', '(31) 98661-9910', 'Transmissão', 'IM', 'Disponível', '1999-07-09', ARRAY['Transmissão','Áudio']),
-(10, 'João Pedro', '(31) 99912-0877', 'Design', 'JP', 'Disponível', '1995-08-21', ARRAY['Design','Social media']),
-(11, 'Larissa Ferreira', '(31) 98551-7721', 'Social media', 'LF', 'Disponível', '1998-09-15', ARRAY['Social media','Fotografia']),
-(12, 'Mateus Ribeiro', '(31) 99231-8800', 'Vídeo', 'MR', 'Disponível', '1992-10-30', ARRAY['Vídeo','Transmissão']),
-(13, 'Leonardo Henrique', '(31) 99976-8062', 'Coordenação', 'LH', 'Disponível', '1990-05-20', ARRAY['Direção de mídia','Projeção','Áudio']),
-(14, 'Welson', '(31) 97528-4359', 'Coordenação / Líder', 'W', 'Disponível', '1988-08-10', ARRAY['Coordenação','Direção de mídia'])
+(13, 'Leonardo Henrique', '(31) 99976-8062', 'Coordenação', 'LH', 'Disponível', NULL, ARRAY['Direção de mídia','Projeção','Áudio']),
+(14, 'Welson', '(31) 97528-4359', 'Coordenação / Líder', 'W', 'Disponível', NULL, ARRAY['Coordenação','Direção de mídia'])
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     phone = EXCLUDED.phone,
     area = EXCLUDED.area,
     initials = EXCLUDED.initials,
     availability = EXCLUDED.availability,
-    birthday = EXCLUDED.birthday,
     skills = EXCLUDED.skills;
 
 -- Ajustar sequence de people
-SELECT setval('people_id_seq', (SELECT COALESCE(MAX(id), 1) FROM people));
+SELECT setval('people_id_seq', (SELECT COALESCE(MAX(id), 14) FROM people));
 
 -- Inserir Usuários de Acesso (Login com Número e Senha)
 INSERT INTO app_users (id, name, phone, password, role, person_id) VALUES
@@ -214,46 +201,4 @@ ON CONFLICT (phone) DO UPDATE SET
     person_id = EXCLUDED.person_id;
 
 -- Ajustar sequence de app_users
-SELECT setval('app_users_id_seq', (SELECT COALESCE(MAX(id), 1) FROM app_users));
-
--- Inserir Escalas
-INSERT INTO scales (id, title, type, place, date, time) VALUES
-(1, 'Culto de celebração', 'Culto', 'Templo principal', '2026-11-15', '18:30'),
-(2, 'Ensaio técnico', 'Ensaio', 'Templo principal', '2026-11-18', '19:00'),
-(3, 'Culto de celebração', 'Culto', 'Templo principal', '2026-11-22', '18:30'),
-(4, 'Conferência de jovens', 'Evento', 'Auditório', '2026-11-28', '19:30')
-ON CONFLICT (id) DO UPDATE SET
-    title = EXCLUDED.title,
-    type = EXCLUDED.type,
-    place = EXCLUDED.place,
-    date = EXCLUDED.date,
-    time = EXCLUDED.time;
-
--- Ajustar sequence de scales
-SELECT setval('scales_id_seq', (SELECT COALESCE(MAX(id), 1) FROM scales));
-
--- Inserir Atribuições das Escalas
-DELETE FROM scale_assignments WHERE scale_id IN (1, 2, 3, 4);
-
-INSERT INTO scale_assignments (scale_id, person_id, activity_name, confirmed) VALUES
--- Escala 1 (Culto 15/11)
-(1, 1, 'Fotografia', false),
-(1, 2, 'Áudio', true),
-(1, 3, 'Projeção', true),
-(1, 4, 'Transmissão', false),
--- Escala 2 (Ensaio 18/11)
-(2, 2, 'Áudio', true),
-(2, 3, 'Projeção', true),
-(2, 8, 'Direção de mídia', false),
--- Escala 3 (Culto 22/11)
-(3, 5, 'Social media', true),
-(3, 6, 'Áudio', false),
-(3, 7, 'Fotografia', true),
-(3, 9, 'Transmissão', true),
--- Escala 4 (Conferência 28/11)
-(4, 10, 'Design', true),
-(4, 11, 'Social media', true),
-(4, 12, 'Vídeo', false);
-
--- Ajustar sequence de scale_assignments
-SELECT setval('scale_assignments_id_seq', (SELECT COALESCE(MAX(id), 1) FROM scale_assignments));
+SELECT setval('app_users_id_seq', (SELECT COALESCE(MAX(id), 2) FROM app_users));
