@@ -7,7 +7,63 @@
   <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
-<div class="app">
+
+<!-- TELA DE ACESSO / LOGIN EXATAMENTE IGUAL AO DESIGN -->
+<main class="page login-page" id="loginScreen">
+  <aside class="brand-panel" aria-label="Identidade SERVUS">
+    <div class="brand-top">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 7.2c1.2-1.1 2.8-1.7 4.8-1.7 2.8 0 4.7 1.2 4.7 3.2 0 4.5-8.9 2.1-8.9 6.5 0 2 1.9 3.3 4.8 3.3 2 0 3.7-.6 4.9-1.8" stroke="white" stroke-width="2.1" stroke-linecap="round"/></svg></div>
+      <div class="brand-word">SERVUS</div>
+    </div>
+    <div class="brand-copy">
+      <p class="eyebrow">AD Regional Bethania</p>
+      <h1>Servir com<br><span>propósito.</span></h1>
+      <p>Um espaço para conectar pessoas, organizar equipes e fortalecer tudo aquilo que fazemos juntos.</p>
+    </div>
+    <div class="brand-bottom"><span><i class="dot"></i>Gestão de equipes e ministérios</span><span>SERVUS</span></div>
+  </aside>
+
+  <section class="form-panel">
+    <div class="login-card">
+      <div class="mobile-brand">
+        <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 7.2c1.2-1.1 2.8-1.7 4.8-1.7 2.8 0 4.7 1.2 4.7 3.2 0 4.5-8.9 2.1-8.9 6.5 0 2 1.9 3.3 4.8 3.3 2 0 3.7-.6 4.9-1.8" stroke="white" stroke-width="2.1" stroke-linecap="round"/></svg></div>
+        <div><div class="brand-word">SERVUS</div><small>AD REGIONAL BETHANIA</small></div>
+      </div>
+      <div class="form-kicker">Acesso da equipe</div>
+      <h2>Bem-vindo(a)!</h2>
+      <p class="intro">Entre com seu número de identificação e senha para consultar suas escalas e acompanhar as atividades da equipe.</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="numero">Número</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <input id="numero" name="numero" type="text" inputmode="numeric" autocomplete="username" placeholder="Digite seu número" aria-describedby="numeroErro" required />
+          </div>
+          <div class="field-error" id="numeroErro">Informe seu número de identificação.</div>
+        </div>
+        <div class="field">
+          <label for="senha">Senha</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 5v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="Digite sua senha" aria-describedby="senhaErro" required />
+            <button class="show-pass" type="button" id="togglePassword" aria-label="Mostrar senha" title="Mostrar senha"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6Z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.7" stroke="currentColor" stroke-width="1.7"/></svg></button>
+          </div>
+          <div class="field-error" id="senhaErro">Informe sua senha.</div>
+        </div>
+        <div class="form-options">
+          <label class="remember"><input type="checkbox" id="remember" /> Lembrar meu número</label>
+          <a class="help" href="#ajuda" id="helpLink">Precisa de ajuda?</a>
+        </div>
+        <button class="submit" type="submit">Entrar <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      </form>
+      <p class="purpose-line">Seu serviço, seu propósito, sua equipe.</p>
+      <div class="secure-note"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 19 6v5c0 4.7-2.9 8.1-7 10-4.1-1.9-7-5.3-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Ambiente exclusivo da equipe AD Bethania</div>
+    </div>
+  </section>
+</main>
+
+<div class="app hidden" id="appRoot">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brandmark">S</div>
@@ -27,12 +83,13 @@
       <button data-page="activities"><span class="ico">✳</span> Atividades</button>
     </nav>
     <div class="sidebottom">
-      <div class="profile">
-        <div class="avatar">LH</div>
-        <div>
-          <b style="font-size:12px">Coordenação</b>
-          <small>Equipe de mídia</small>
+      <div class="profile" id="userProfileSide">
+        <div class="avatar" id="userAvatarSide">LH</div>
+        <div style="flex:1;min-width:0">
+          <b style="font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="userNameSide">Leonardo Henrique</b>
+          <small id="userRoleSide">Coordenação</small>
         </div>
+        <button class="logout-btn" id="btnLogoutSide" title="Sair da conta">Sair</button>
       </div>
       <div class="app-version">v1.0.0</div>
     </div>
@@ -45,23 +102,27 @@
         <div class="crumb">Workspace <span style="padding:0 7px">/</span><b id="crumb">Visão geral</b></div>
       </div>
       <div class="topright">
-        <button class="iconbtn" id="btnTopBell" title="Notificações">♧<i class="dot"></i></button>
-        <div class="profile">
-          <div class="avatar">LH</div>
+        <button class="iconbtn" id="btnTopBell" title="Notificações">♧<i class="dot" id="bellDot" style="display:none"></i></button>
+        <div class="profile" id="userProfileTop">
+          <div class="avatar" id="userAvatarTop">LH</div>
           <div>
-            <b style="font-size:12px">Coordenação</b>
-            <small>Administrador</small>
+            <b style="font-size:12px" id="userNameTop">Leonardo Henrique</b>
+            <small id="userRoleTop">Coordenação</small>
           </div>
+          <button class="logout-btn" id="btnLogoutTop" title="Sair da conta">Sair</button>
         </div>
       </div>
     </div>
 
     <!-- PÁGINA 1: VISÃO GERAL -->
     <section class="page active" id="page-home">
+      <!-- BANNER DE ALERTA DE ESCALA PENDENTE / NOTIFICAÇÃO -->
+      <div id="homeScaleAlert" class="scale-alert-banner" style="display:none"></div>
+
       <div class="heading">
         <div>
           <div class="eyebrow">Assembleia de Deus Regional Bethania · <span id="homeDate"></span></div>
-          <h1>Bom dia! Vamos servir? ✨</h1>
+          <h1>Bom dia! Vamos servir?</h1>
           <div class="sub">Tudo organizado para que cada pessoa saiba onde e como contribuir.</div>
         </div>
         <button class="btn primary" id="btnHomeNewScale">＋ Criar escala</button>
