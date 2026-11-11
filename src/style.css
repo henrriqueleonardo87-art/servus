@@ -16,6 +16,32 @@
   --amberbg: #fff4df;
   --red: #cf5c68;
   --shadow: 0 12px 35px #24283b0b;
+  --sidebar-bg: #202039;
+  --sidebar-border: #393950;
+  --sidebar-hover: #343352;
+  --calendar-dim: #fafafa;
+}
+
+[data-theme="dark"] {
+  --bg: #0c0d14;
+  --surface: #141520;
+  --surface2: #1c1e2d;
+  --text: #f0f1f7;
+  --muted: #8f95a6;
+  --line: #26283b;
+  --accent: #8778f5;
+  --accent2: #a497ff;
+  --soft: #23223f;
+  --green: #34d399;
+  --greenbg: #102d21;
+  --amber: #fbbf24;
+  --amberbg: #352b14;
+  --red: #f87171;
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  --sidebar-bg: #10111a;
+  --sidebar-border: #232537;
+  --sidebar-hover: #1e2030;
+  --calendar-dim: #11121b;
 }
 
 * {
@@ -50,7 +76,7 @@ button {
 /* Sidebar */
 .sidebar {
   width: 248px;
-  background: #202039;
+  background: var(--sidebar-bg);
   color: #fff;
   padding: 25px 17px;
   display: flex;
@@ -58,6 +84,7 @@ button {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 5;
+  transition: background .2s, border-color .2s;
 }
 
 .brand {
@@ -118,7 +145,7 @@ button {
 
 .nav button:hover,
 .nav button.active {
-  background: #343352;
+  background: var(--sidebar-hover);
   color: #fff;
 }
 
@@ -143,7 +170,7 @@ button {
 
 .sidebottom {
   margin-top: auto;
-  border-top: 1px solid #393950;
+  border-top: 1px solid var(--sidebar-border);
   padding: 17px 8px 0;
 }
 
@@ -597,7 +624,8 @@ h3 {
 .search {
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   padding: 10px 12px;
   min-width: 220px;
   outline: none;
@@ -691,7 +719,7 @@ textarea:focus {
 }
 
 .tabs button.active {
-  background: white;
+  background: var(--surface);
   color: var(--text);
   box-shadow: 0 2px 7px #0000000a;
 }
@@ -716,7 +744,7 @@ textarea:focus {
 
 .calcell {
   min-height: 105px;
-  background: white;
+  background: var(--surface);
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   padding: 9px;
@@ -728,7 +756,7 @@ textarea:focus {
 }
 
 .calcell.dim {
-  background: #fafafa;
+  background: var(--calendar-dim);
 }
 
 .calcell.today .date {
@@ -803,11 +831,13 @@ textarea:focus {
 }
 
 .modal {
-  background: white;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
   width: min(560px, 100%);
   border-radius: 18px;
   padding: 24px;
-  box-shadow: 0 25px 70px #0003;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
   max-height: 90vh;
   overflow: auto;
 }
@@ -839,7 +869,7 @@ textarea:focus {
 .field label {
   font-size: 11px;
   font-weight: 700;
-  color: #656b79;
+  color: var(--muted);
 }
 
 .field input,
@@ -849,7 +879,7 @@ textarea:focus {
   padding: 11px;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface2);
   color: var(--text);
 }
 
@@ -1686,4 +1716,148 @@ textarea:focus {
   .login-card h2 { font-size: 30px; }
   .login-card .intro { margin-bottom: 28px; }
   .form-options { margin-bottom: 23px; }
+}
+
+/* ==========================================================================
+   TEMA ESCURO - OVERRIDES E COMPONENTES
+   ========================================================================== */
+.theme-toggle-login {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 17px;
+  transition: transform .2s, background .2s, border-color .2s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+}
+
+.theme-toggle-login:hover {
+  transform: translateY(-2px);
+  background: var(--surface2);
+}
+
+[data-theme="dark"] .login-page {
+  background: #0c0b13;
+}
+
+[data-theme="dark"] .brand-panel {
+  background: #110d1e;
+}
+
+[data-theme="dark"] .form-panel {
+  background: radial-gradient(ellipse at 88% 12%, rgba(139, 120, 217, .12), transparent 45%),
+              linear-gradient(135deg, #0e0d16 0%, #151421 100%);
+}
+
+[data-theme="dark"] .login-card h2 {
+  color: #f6f5fb;
+}
+
+[data-theme="dark"] .login-card .intro {
+  color: #9f99b2;
+}
+
+[data-theme="dark"] .login-card label {
+  color: #c9c3dd;
+}
+
+[data-theme="dark"] .login-card .input-wrap {
+  background: rgba(25, 23, 37, 0.94);
+  border-color: #35314a;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .login-card .input-wrap:focus-within {
+  background: #1e1b2e;
+  border-color: #9b89ea;
+  box-shadow: 0 0 0 4px rgba(139, 120, 217, .2), 0 5px 16px rgba(0, 0, 0, .4);
+}
+
+[data-theme="dark"] .login-card input {
+  color: #f4f2fb;
+}
+
+[data-theme="dark"] .login-card input::placeholder {
+  color: #6c6680;
+}
+
+[data-theme="dark"] .form-kicker {
+  color: #cbbefd;
+  background: rgba(39, 33, 62, 0.85);
+  border-color: #4a3e75;
+}
+
+[data-theme="dark"] .remember {
+  color: #a49ebd;
+}
+
+[data-theme="dark"] .help {
+  color: #b3a4f6;
+}
+
+[data-theme="dark"] .submit {
+  background: linear-gradient(105deg, #5b4acb 0%, #7e6fe3 100%);
+  box-shadow: 0 10px 24px rgba(91, 74, 203, .35);
+}
+
+[data-theme="dark"] .submit:hover {
+  background: linear-gradient(105deg, #6857dc 0%, #8c7ff0 100%);
+}
+
+[data-theme="dark"] .purpose-line,
+[data-theme="dark"] .secure-note {
+  color: #8c85a1;
+}
+
+[data-theme="dark"] .scale-alert-banner {
+  background: linear-gradient(135deg, #1f1d38 0%, #252243 100%);
+  border-color: #3b3563;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .scale-alert-text b {
+  color: #ede9fe;
+}
+
+[data-theme="dark"] .scale-alert-text small {
+  color: #c4b5fd;
+}
+
+[data-theme="dark"] .today-roster {
+  background: linear-gradient(110deg, #1b192e, #161526);
+  border: 1px solid #2e2a4a;
+}
+
+[data-theme="dark"] .today-roster-event {
+  border-top-color: #272343;
+}
+
+[data-theme="dark"] .today-person {
+  background: #2a254d;
+  color: #cfc5ff;
+}
+
+[data-theme="dark"] .myhero {
+  background: linear-gradient(115deg, #1a1830, #38306b);
+}
+
+[data-theme="dark"] .toast {
+  background: #1d1c31;
+  border: 1px solid #363255;
+  color: #f1eff8;
+}
+
+@media(max-width: 640px) {
+  [data-theme="dark"] .form-panel {
+    background: linear-gradient(155deg, #110d1e 0 190px, #0e0d16 190px 100%);
+  }
 }
