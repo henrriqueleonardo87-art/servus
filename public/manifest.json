@@ -1,0 +1,24 @@
+{
+  "name": "SERVUS · AD Regional Bethânia",
+  "short_name": "SERVUS",
+  "description": "Gestão de equipes, escalas e frentes de serviço da AD Regional Bethânia.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0e0f15",
+  "theme_color": "#6355d8",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
