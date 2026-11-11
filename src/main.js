@@ -74,19 +74,63 @@ function updateProfileUI() {
   const topName = document.getElementById('userNameTop');
   const topRole = document.getElementById('userRoleTop');
 
-  if (sideAvatar) sideAvatar.textContent = userInitials;
+  const person = findPerson(currentUser.personId);
+  const avatarUrl = person?.avatarUrl || '';
+
+  if (sideAvatar) {
+    if (avatarUrl) {
+      sideAvatar.style.backgroundImage = `url('${avatarUrl}')`;
+      sideAvatar.style.backgroundSize = 'cover';
+      sideAvatar.style.backgroundPosition = 'center';
+      sideAvatar.style.color = 'transparent';
+      sideAvatar.textContent = '';
+    } else {
+      sideAvatar.style.backgroundImage = 'none';
+      sideAvatar.style.color = '';
+      sideAvatar.textContent = userInitials;
+    }
+  }
   if (sideName) sideName.textContent = currentUser.name;
   if (sideRole) sideRole.textContent = currentUser.role || 'Coordenação';
 
-  if (topAvatar) topAvatar.textContent = userInitials;
+  if (topAvatar) {
+    if (avatarUrl) {
+      topAvatar.style.backgroundImage = `url('${avatarUrl}')`;
+      topAvatar.style.backgroundSize = 'cover';
+      topAvatar.style.backgroundPosition = 'center';
+      topAvatar.style.color = 'transparent';
+      topAvatar.textContent = '';
+    } else {
+      topAvatar.style.backgroundImage = 'none';
+      topAvatar.style.color = '';
+      topAvatar.textContent = userInitials;
+    }
+  }
   if (topName) topName.textContent = currentUser.name;
   if (topRole) topRole.textContent = currentUser.role || 'Coordenação';
+}
+
+function updateHomeGreeting() {
+  const el = document.getElementById('homeGreeting');
+  if (!el) return;
+  const hour = new Date().getHours();
+  let salutation = 'Boa noite';
+  if (hour >= 5 && hour < 12) salutation = 'Bom dia';
+  else if (hour >= 12 && hour < 18) salutation = 'Boa tarde';
+
+  const firstName = currentUser?.name ? currentUser.name.trim().split(' ')[0] : '';
+  el.textContent = firstName ? `${salutation}, ${firstName}! Vamos servir?` : `${salutation}! Vamos servir?`;
 }
 
 // ==========================================
 // MODAL CONTROLLER
 // ==========================================
-function openModal(title, bodyHtml, saveText, onSave) {
+function openModal(title, bodyHtml, saveText, onSave, isWide = false) {
+  const modalBox = document.querySelector('#modalback .modal');
+  if (modalBox) {
+    if (isWide) modalBox.classList.add('wide');
+    else modalBox.classList.remove('wide');
+  }
   document.getElementById('modalTitle').textContent = title;
   document.getElementById('modalBody').innerHTML = bodyHtml;
   document.getElementById('modalFoot').innerHTML = `
@@ -100,6 +144,8 @@ function openModal(title, bodyHtml, saveText, onSave) {
 
 function closeModal() {
   document.getElementById('modalback').classList.remove('show');
+  const modalBox = document.querySelector('#modalback .modal');
+  if (modalBox) modalBox.classList.remove('wide');
 }
 
 // ==========================================
@@ -185,6 +231,7 @@ async function loadDataFromSupabase() {
     renderAll();
     checkBirthdayNotifications();
     checkUserScaleAlerts();
+    checkScaleNotifications();
   } catch (err) {
     console.error('Erro ao buscar dados do Supabase:', err);
     notify('Erro ao sincronizar com Supabase: ' + err.message);
@@ -195,6 +242,7 @@ async function loadDataFromSupabase() {
 // RENDERIZAÇÃO: PÁGINA 1 - HOME
 // ==========================================
 function renderHome() {
+  updateHomeGreeting();
   const now = new Date();
   const today = localISO(now);
   const todayScales = scales
@@ -440,7 +488,7 @@ function renderScales() {
               icon = '✕';
             }
             return `<span class="pill ${pillClass}" style="font-size:10px;padding:2px 6px" title="${p ? p.name : ''} - ${a.activity} (${a.status || 'pendente'})">${icon} ${pName} (${a.activity})</span>`;
-          }).join('') || '<span class="muted small">Sem equipe</span>'}
+          }).join('') || '<span class="muted small">Sem equipe</span>'}\
         </div>
       </td>
       <td>
@@ -573,6 +621,18 @@ function renderMine() {
 
     const personName = currentPerson ? currentPerson.name : (currentUser ? currentUser.name : 'Voluntário');
     const waUrl = getWelsonWhatsappUrl(personName, item.activity, item.scale.title, fmt(item.scale.date), item.scale.time, item.cancellationReason);
+    const gcalUrl = api.generateGoogleCalendarUrl(item.scale, item, currentPerson);
+
+    const calActions = `
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="btn-gcal" title="Salvar no Google Agenda">
+          📅 Salvar no Google Agenda
+        </a>
+        <button type="button" class="btn-ics btn-download-ics" data-scale-id="${item.scale.id}" data-assignment-id="${item.id}" title="Baixar arquivo .ICS para calendário do celular">
+          📥 .ICS
+        </button>
+      </div>
+    `;
 
     let actionsHtml = '';
     if (isConfirmed) {
@@ -607,6 +667,7 @@ function renderMine() {
           <b style="font-size:14px">${item.activity}</b>
           <div class="muted small">${item.scale.title} · ${item.scale.place || 'Templo principal'}</div>
           ${item.cancellationReason ? `<div style="font-size:11px;color:#dc2626;margin-top:3px">Motivo do cancelamento: ${item.cancellationReason}</div>` : ''}
+          ${calActions}
         </div>
         <div style="text-align:right;min-width:110px">
           <b>${fmt(item.scale.date)}</b>
@@ -691,6 +752,20 @@ function renderMine() {
       );
     };
   });
+
+  // Listener para baixar arquivo .ICS
+  container.querySelectorAll('.btn-download-ics').forEach(b => {
+    b.onclick = () => {
+      const sId = Number(b.dataset.scaleId);
+      const aId = Number(b.dataset.assignmentId);
+      const s = scales.find(x => x.id === sId);
+      const a = s?.assignments?.find(x => x.id === aId);
+      if (s) {
+        api.downloadIcsFile(s, a, currentPerson);
+        notify('Arquivo (.ics) de agenda baixado!');
+      }
+    };
+  });
 }
 
 // ==========================================
@@ -700,7 +775,8 @@ function renderPeople() {
   const q = (document.getElementById('peopleSearch')?.value || '').toLowerCase();
   const filtered = people.filter(p => {
     const skillsText = (p.skills || []).join(' ');
-    return (p.name + ' ' + (p.area || '') + ' ' + skillsText).toLowerCase().includes(q);
+    const emailText = p.email || '';
+    return (p.name + ' ' + (p.area || '') + ' ' + skillsText + ' ' + emailText).toLowerCase().includes(q);
   });
 
   document.getElementById('peopleCount').textContent = filtered.length + ' pessoas';
@@ -712,8 +788,13 @@ function renderPeople() {
     <tr>
       <td>
         <div class="person">
-          <div class="avatar">${p.initials}</div>
-          <b>${p.name}</b>
+          <div class="avatar" style="${p.avatarUrl ? `background-image:url('${p.avatarUrl}');background-size:cover;background-position:center;color:transparent;` : ''}">
+            ${p.avatarUrl ? '' : p.initials}
+          </div>
+          <div>
+            <b>${p.name}</b>
+            ${p.email ? `<small style="display:block;font-size:11px;color:var(--muted)">${p.email}</small>` : ''}
+          </div>
         </div>
       </td>
       <td>${p.phone || '—'}</td>
@@ -850,60 +931,149 @@ function renderActivities() {
 // ==========================================
 // MODAL: PESSOA (CRIAR / EDITAR)
 // ==========================================
-function openPersonModal(id = null) {
+async function openPersonModal(id = null) {
   const p = people.find(x => x.id === id) || {};
   const isEditing = Boolean(id);
 
-  const skillsHtml = activities.map(a => `
-    <label style="display:flex;align-items:center;gap:8px;background:var(--surface2);padding:10px;border-radius:9px;font-size:12px;font-weight:500;color:var(--text)">
-      <input type="checkbox" class="skillcheck" value="${a.name}" ${(p.skills || (p.area ? [p.area] : [])).includes(a.name) ? 'checked' : ''} style="accent-color:var(--accent)">
-      ${a.icon} ${a.name}
-    </label>
-  `).join('');
+  let userCreds = null;
+  if (isEditing) {
+    try {
+      userCreds = await api.getPersonCredentials(id);
+    } catch (e) {
+      console.warn('Erro ao carregar credenciais do voluntário:', e);
+    }
+  }
+
+  let currentAvatar = p.avatarUrl || '';
+  const initialSkillsList = p.skills && p.skills.length ? p.skills : (p.area ? p.area.split(',').map(s => s.trim()) : []);
+  const currentSkills = new Set(initialSkillsList);
+  let currentAvail = p.availability || 'Disponível';
 
   const bodyHtml = `
-    <div class="formgrid">
-      <div class="field full">
-        <label>Nome completo</label>
-        <input id="pname" value="${p.name || ''}" placeholder="Ex.: Maria Oliveira">
-      </div>
-      <div class="field">
-        <label>Telefone</label>
-        <input id="pphone" value="${p.phone || ''}" placeholder="(00) 00000-0000">
-      </div>
-      <div class="field full">
-        <label>O que essa pessoa faz?</label>
-        <div class="muted small">Selecione todas as atividades que ela sabe realizar.</div>
-        <div id="personSkills" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:4px">
-          ${skillsHtml}
+    <div class="modal-tabs" id="personModalTabs">
+      <button type="button" class="modal-tab-btn active" data-tab="tabId">
+        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="2"/></svg>
+        Identificação & Acesso
+      </button>
+      <button type="button" class="modal-tab-btn" data-tab="tabSkills">
+        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="currentColor" stroke-width="2"/></svg>
+        Funções & Atividades (<span id="skillBadgeCount">${currentSkills.size}</span>)
+      </button>
+      <button type="button" class="modal-tab-btn" data-tab="tabAvail">
+        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/></svg>
+        Disponibilidade & Aniversário
+      </button>
+    </div>
+
+    <!-- ABA 1: IDENTIFICAÇÃO & ACESSO -->
+    <div class="modal-tab-pane active" id="pane-tabId">
+      <div class="avatar-uploader">
+        <div class="avatar-preview-box" id="pavatarBox" style="${currentAvatar ? `background-image:url('${currentAvatar}');background-size:cover;background-position:center;color:transparent;` : ''}">
+          ${currentAvatar ? '' : (p.initials || '👤')}
         </div>
-        <div class="muted small" style="margin-top:4px">Para adicionar outra função, cadastre-a primeiro em Atividades.</div>
+        <div class="avatar-upload-info">
+          <div class="avatar-upload-title">Foto de identificação</div>
+          <div class="avatar-upload-sub">Importe uma foto da galeria ou câmera para identificar na equipe.</div>
+          <div class="avatar-btn-row">
+            <input type="file" id="pavatarFile" accept="image/*" style="display:none">
+            <button type="button" class="btn secondary mini" id="btnPickAvatar">📷 Escolher foto</button>
+            <button type="button" class="mini btn-danger-mini" id="btnRemoveAvatar" style="${currentAvatar ? '' : 'display:none'}">Remover foto</button>
+          </div>
+        </div>
       </div>
-      <div class="field">
-        <label>Aniversário</label>
-        <input type="date" id="pbirthday" value="${p.birthday || ''}">
-      </div>
-      <div class="field">
-        <label>Disponibilidade geral</label>
-        <select id="pavail">
-          <option ${p.availability === 'Disponível' || !p.availability ? 'selected' : ''}>Disponível</option>
-          <option ${p.availability === 'Indisponível' ? 'selected' : ''}>Indisponível</option>
-        </select>
-      </div>
-      <div class="field full">
-        <label>Indisponibilidade — início</label>
-        <input type="date" id="pfrom" value="${p.unavailableFrom || ''}">
-      </div>
-      <div class="field full">
-        <label>Indisponibilidade — fim</label>
-        <input type="date" id="pto" value="${p.unavailableTo || ''}">
-      </div>
-      <div class="field full">
-        <label>Motivo / observação (opcional)</label>
-        <input id="preason" value="${p.unavailableReason || ''}" placeholder="Ex.: viagem, compromisso pessoal...">
+
+      <div class="formgrid">
+        <div class="field full">
+          <label for="pname">Nome completo *</label>
+          <input id="pname" value="${p.name || ''}" placeholder="Ex.: Maria Oliveira" required>
+        </div>
+        <div class="field">
+          <label for="pemail">E-mail (Google Agenda) *</label>
+          <input type="email" id="pemail" value="${p.email || userCreds?.email || ''}" placeholder="exemplo@gmail.com" required>
+          <div class="muted small" style="font-size:10px">Obrigatório para sincronizar com Google Agenda.</div>
+        </div>
+        <div class="field">
+          <label for="pphone">Telefone / WhatsApp *</label>
+          <input id="pphone" value="${p.phone || userCreds?.phone || ''}" placeholder="(31) 99999-9999" required>
+        </div>
+        <div class="field">
+          <label for="prole">Função / Perfil de Acesso</label>
+          <select id="prole">
+            <option value="Voluntário" ${(userCreds?.role || p.area) === 'Voluntário' ? 'selected' : ''}>Voluntário</option>
+            <option value="Líder" ${(userCreds?.role || p.area) === 'Líder' ? 'selected' : ''}>Líder</option>
+            <option value="Coordenação" ${(userCreds?.role || p.area) === 'Coordenação' ? 'selected' : ''}>Coordenação</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ppassword">Senha de Acesso ao Sistema</label>
+          <div style="position:relative;display:flex;align-items:center">
+            <input type="password" id="ppassword" value="${userCreds?.password || ''}" placeholder="${isEditing ? 'Digite para alterar a senha' : 'Criar senha de acesso'}" style="padding-right:38px">
+            <button type="button" id="btnTogglePassModal" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px" title="Mostrar/ocultar senha">👁</button>
+          </div>
+          <div class="muted small" style="font-size:10px">Número e senha usados para login no SERVUS.</div>
+        </div>
       </div>
     </div>
-    <div class="muted small" style="margin-top:4px">Para indisponibilidade de apenas um dia, informe a mesma data no início e no fim.</div>
+
+    <!-- ABA 2: FUNÇÕES & ATIVIDADES -->
+    <div class="modal-tab-pane" id="pane-tabSkills">
+      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <b style="font-size:13px;display:block">O que essa pessoa faz?</b>
+          <div class="muted small">Clique nos cartões para selecionar as áreas aptas:</div>
+        </div>
+        <button type="button" class="mini" id="btnToggleAllSkills">Selecionar todas</button>
+      </div>
+      <div class="skill-cards-grid" id="skillCardsGrid">
+        ${activities.map(a => {
+          const isSelected = currentSkills.has(a.name);
+          return `
+            <div class="skill-card-item ${isSelected ? 'selected' : ''}" data-skill="${a.name}">
+              <span class="skill-card-icon">${a.icon || '✳'}</span>
+              <span class="skill-card-text" title="${a.name}">${a.name}</span>
+              <span class="skill-card-check">✓</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="muted small" style="margin-top:10px">Para cadastrar uma nova função, acesse o menu Atividades.</div>
+    </div>
+
+    <!-- ABA 3: DISPONIBILIDADE & ANIVERSÁRIO -->
+    <div class="modal-tab-pane" id="pane-tabAvail">
+      <div class="field full">
+        <label>Status de disponibilidade geral</label>
+        <div class="avail-pills">
+          <button type="button" class="avail-pill-btn avail-green ${currentAvail === 'Disponível' ? 'active' : ''}" id="btnAvailDisp" data-avail="Disponível">🟢 Disponível para escalas</button>
+          <button type="button" class="avail-pill-btn avail-red ${currentAvail === 'Indisponível' ? 'active' : ''}" id="btnAvailIndisp" data-avail="Indisponível">🔴 Indisponível</button>
+        </div>
+      </div>
+
+      <div class="field full" style="margin-top:8px">
+        <label for="pbirthday">🎂 Data de nascimento / Aniversário</label>
+        <input type="date" id="pbirthday" value="${p.birthday || ''}">
+        <div class="muted small" style="font-size:10px">Usado para felicitações e lembretes de aniversário da equipe.</div>
+      </div>
+
+      <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:12px;border:1px solid var(--line)">
+        <b style="font-size:12px;display:block;margin-bottom:6px">Período de ausência ou férias (opcional)</b>
+        <div class="formgrid">
+          <div class="field" style="margin-bottom:6px">
+            <label for="pfrom">Ausente a partir de</label>
+            <input type="date" id="pfrom" value="${p.unavailableFrom || ''}">
+          </div>
+          <div class="field" style="margin-bottom:6px">
+            <label for="pto">Ausente até</label>
+            <input type="date" id="pto" value="${p.unavailableTo || ''}">
+          </div>
+          <div class="field full" style="margin-bottom:0">
+            <label for="preason">Motivo da ausência</label>
+            <input id="preason" value="${p.unavailableReason || ''}" placeholder="Ex.: Viagem, trabalho, compromisso...">
+          </div>
+        </div>
+      </div>
+      <div class="muted small" style="margin-top:6px">Para ausência de apenas um dia, informe a mesma data no início e no fim.</div>
+    </div>
   `;
 
   openModal(
@@ -914,23 +1084,38 @@ function openPersonModal(id = null) {
       const name = document.getElementById('pname').value.trim();
       if (!name) return notify('Informe o nome da pessoa.');
 
+      const email = document.getElementById('pemail').value.trim();
+      if (!email || !email.includes('@')) {
+        return notify('Informe um e-mail válido (obrigatório para integração com Google Agenda).');
+      }
+
+      const phone = document.getElementById('pphone').value.trim();
+      if (!phone) return notify('Informe o telefone / WhatsApp da pessoa.');
+
       const from = document.getElementById('pfrom').value;
       const to = document.getElementById('pto').value;
-      if (from && to && to < from) return notify('A data final não pode ser anterior à inicial.');
+      if (from && to && to < from) return notify('A data final de ausência não pode ser anterior à data inicial.');
 
-      const selectedSkills = [...document.querySelectorAll('.skillcheck:checked')].map(x => x.value);
+      const selectedSkills = [...document.querySelectorAll('.skill-card-item.selected')].map(x => x.dataset.skill);
+
+      const password = document.getElementById('ppassword').value.trim();
+      const role = document.getElementById('prole').value;
 
       const personData = {
         name,
-        phone: document.getElementById('pphone').value.trim(),
+        phone,
+        email,
+        avatarUrl: currentAvatar,
         skills: selectedSkills,
-        area: selectedSkills.join(', '),
+        area: selectedSkills.join(', ') || role,
         initials: initials(name),
-        availability: document.getElementById('pavail').value,
+        availability: currentAvail,
         birthday: document.getElementById('pbirthday').value || null,
         unavailableFrom: from || null,
         unavailableTo: to || null,
-        unavailableReason: document.getElementById('preason').value.trim() || null
+        unavailableReason: document.getElementById('preason').value.trim() || null,
+        password,
+        role
       };
 
       try {
@@ -945,8 +1130,141 @@ function openPersonModal(id = null) {
       } catch (err) {
         notify('Erro ao salvar no Supabase: ' + err.message);
       }
-    }
+    },
+    true // isWide modal
   );
+
+  // 1. Configurar alternância de abas
+  const tabBtns = document.querySelectorAll('.modal-tab-btn');
+  const tabPanes = document.querySelectorAll('.modal-tab-pane');
+  tabBtns.forEach(btn => {
+    btn.onclick = () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabPanes.forEach(pane => pane.classList.remove('active'));
+      btn.classList.add('active');
+      const targetPane = document.getElementById(`pane-${btn.dataset.tab}`);
+      if (targetPane) targetPane.classList.add('active');
+    };
+  });
+
+  // 2. Configurar upload de foto / avatar
+  const fileInput = document.getElementById('pavatarFile');
+  const pavatarBox = document.getElementById('pavatarBox');
+  const btnPickAvatar = document.getElementById('btnPickAvatar');
+  const btnRemoveAvatar = document.getElementById('btnRemoveAvatar');
+
+  if (btnPickAvatar && fileInput) {
+    btnPickAvatar.onclick = () => fileInput.click();
+    fileInput.onchange = () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 320;
+          let w = img.width;
+          let h = img.height;
+          if (w > h) {
+            if (w > maxDim) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            }
+          } else {
+            if (h > maxDim) {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          currentAvatar = canvas.toDataURL('image/jpeg', 0.85);
+
+          pavatarBox.style.backgroundImage = `url('${currentAvatar}')`;
+          pavatarBox.style.backgroundSize = 'cover';
+          pavatarBox.style.backgroundPosition = 'center';
+          pavatarBox.style.color = 'transparent';
+          pavatarBox.textContent = '';
+          btnRemoveAvatar.style.display = 'inline-block';
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+
+  if (btnRemoveAvatar) {
+    btnRemoveAvatar.onclick = () => {
+      currentAvatar = '';
+      pavatarBox.style.backgroundImage = 'none';
+      pavatarBox.style.color = '';
+      pavatarBox.textContent = initials(document.getElementById('pname').value) || '👤';
+      btnRemoveAvatar.style.display = 'none';
+      if (fileInput) fileInput.value = '';
+    };
+  }
+
+  // 3. Configurar seleção de cartões de habilidades
+  const skillCards = document.querySelectorAll('.skill-card-item');
+  const updateSkillBadge = () => {
+    const selCount = document.querySelectorAll('.skill-card-item.selected').length;
+    const badge = document.getElementById('skillBadgeCount');
+    if (badge) badge.textContent = selCount;
+  };
+
+  skillCards.forEach(card => {
+    card.onclick = () => {
+      card.classList.toggle('selected');
+      updateSkillBadge();
+    };
+  });
+
+  const btnToggleAll = document.getElementById('btnToggleAllSkills');
+  if (btnToggleAll) {
+    btnToggleAll.onclick = () => {
+      const allSelected = document.querySelectorAll('.skill-card-item:not(.selected)').length === 0;
+      skillCards.forEach(card => {
+        if (allSelected) card.classList.remove('selected');
+        else card.classList.add('selected');
+      });
+      updateSkillBadge();
+      btnToggleAll.textContent = allSelected ? 'Selecionar todas' : 'Desmarcar todas';
+    };
+  }
+
+  // 4. Configurar pílulas de disponibilidade
+  const btnDisp = document.getElementById('btnAvailDisp');
+  const btnIndisp = document.getElementById('btnAvailIndisp');
+  if (btnDisp && btnIndisp) {
+    btnDisp.onclick = () => {
+      currentAvail = 'Disponível';
+      btnDisp.classList.add('active');
+      btnIndisp.classList.remove('active');
+    };
+    btnIndisp.onclick = () => {
+      currentAvail = 'Indisponível';
+      btnIndisp.classList.add('active');
+      btnDisp.classList.remove('active');
+    };
+  }
+
+  // 5. Configurar toggle de visualização da senha
+  const passInput = document.getElementById('ppassword');
+  const btnTogglePass = document.getElementById('btnTogglePassModal');
+  if (btnTogglePass && passInput) {
+    btnTogglePass.onclick = () => {
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        btnTogglePass.textContent = '🔒';
+      } else {
+        passInput.type = 'password';
+        btnTogglePass.textContent = '👁';
+      }
+    };
+  }
 }
 
 async function deletePersonAction(id) {
@@ -963,22 +1281,40 @@ async function deletePersonAction(id) {
 // ==========================================
 // MODAL: ATIVIDADE (CRIAR / EDITAR)
 // ==========================================
+const PRESET_ACTIVITY_ICONS = [
+  '🎥', '🎬', '📺', '🎚️', '🎤', '🎵', '🎸', '🥁',
+  '💡', '📷', '📱', '💻', '📋', '🤝', '👶', '✝️',
+  '🛡️', '🚗', '☕', '📢', '🎧', '🕊️', '✨', '✳️'
+];
+
 function openActivityModal(id = null) {
   const a = activities.find(x => x.id === id) || {};
   const isEditing = Boolean(id);
+  let selectedIcon = a.icon || '🎥';
 
   const bodyHtml = `
     <div class="field">
-      <label>Nome da atividade</label>
-      <input id="aname" value="${a.name || ''}" placeholder="Ex.: Operação de câmera">
+      <label for="aname">Nome da atividade *</label>
+      <input id="aname" value="${a.name || ''}" placeholder="Ex.: Operação de câmera" required>
     </div>
     <div class="field">
-      <label>Descrição</label>
+      <label for="adesc">Descrição da função</label>
       <textarea id="adesc" placeholder="Descreva brevemente essa responsabilidade">${a.desc || ''}</textarea>
     </div>
     <div class="field">
-      <label>Ícone (emoji ou símbolo)</label>
-      <input id="aicon" value="${a.icon || '✳'}">
+      <label>Escolha o ícone representativo:</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <div id="iconPreview" style="width:48px;height:48px;border-radius:12px;background:var(--surface2);border:2px solid var(--accent);display:grid;place-items:center;font-size:24px">
+          ${selectedIcon}
+        </div>
+        <span class="muted small">Clique em um dos ícones abaixo para selecionar:</span>
+      </div>
+      <div class="icon-picker-grid" id="iconPickerGrid">
+        ${PRESET_ACTIVITY_ICONS.map(ic => `
+          <button type="button" class="icon-picker-btn ${ic === selectedIcon ? 'active' : ''}" data-icon="${ic}">${ic}</button>
+        `).join('')}
+      </div>
+      <input type="hidden" id="aicon" value="${selectedIcon}">
     </div>
   `;
 
@@ -993,7 +1329,7 @@ function openActivityModal(id = null) {
       const actData = {
         name,
         desc: document.getElementById('adesc').value.trim(),
-        icon: document.getElementById('aicon').value.trim() || '✳'
+        icon: document.getElementById('aicon').value.trim() || '✳️'
       };
 
       try {
@@ -1010,6 +1346,21 @@ function openActivityModal(id = null) {
       }
     }
   );
+
+  // Configurar clique nos ícones predefinidos
+  const iconBtns = document.querySelectorAll('.icon-picker-btn');
+  const preview = document.getElementById('iconPreview');
+  const hiddenInput = document.getElementById('aicon');
+
+  iconBtns.forEach(btn => {
+    btn.onclick = () => {
+      iconBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedIcon = btn.dataset.icon;
+      if (preview) preview.textContent = selectedIcon;
+      if (hiddenInput) hiddenInput.value = selectedIcon;
+    };
+  });
 }
 
 // ==========================================
@@ -1154,20 +1505,99 @@ async function deleteScaleAction(id) {
 }
 
 // ==========================================
-// NOTIFICAÇÕES DE ANIVERSÁRIO
+// NOTIFICAÇÕES (LEMBRETES DE ESCALA & ANIVERSÁRIOS)
 // ==========================================
-async function enableBirthdayNotifications() {
+function triggerBrowserNotification(title, body, tag = 'servus-notif') {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, {
+        body,
+        icon: '/icon-192.svg',
+        badge: '/icon-192.svg',
+        tag,
+        renotify: true,
+        data: { url: '/' }
+      });
+    }).catch(() => {
+      new Notification(title, { body, icon: '/icon-192.svg', tag });
+    });
+  } else {
+    try {
+      new Notification(title, { body, icon: '/icon-192.svg', tag });
+    } catch (e) {
+      console.warn('Erro ao disparar notificação:', e);
+    }
+  }
+}
+
+async function enableAllNotifications() {
   if (!('Notification' in window)) {
-    notify('Este navegador não suporta notificações.');
+    notify('Este dispositivo não suporta notificações.');
     return;
   }
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
-    notify('Notificações de aniversário ativadas!');
+    notify('Notificações ativadas! Você receberá lembretes 1 dia antes e no dia das escalas.');
+    checkScaleNotifications();
     checkBirthdayNotifications();
   } else {
     notify('Permissão de notificação não concedida.');
   }
+}
+
+async function enableBirthdayNotifications() {
+  await enableAllNotifications();
+}
+
+async function checkScaleNotifications() {
+  if (!currentUser) return;
+  const targetPersonId = currentUser.personId;
+  const targetName = currentUser.name ? currentUser.name.toLowerCase() : '';
+
+  const now = new Date();
+  const todayStr = localISO(now);
+  const tom = new Date(now);
+  tom.setDate(tom.getDate() + 1);
+  const tomorrowStr = localISO(tom);
+
+  scales.forEach(s => {
+    (s.assignments || []).forEach(a => {
+      const isMine = (targetPersonId && String(a.person) === String(targetPersonId)) ||
+                     (targetName && findPerson(a.person)?.name.toLowerCase() === targetName);
+      if (!isMine) return;
+      if (a.status === 'cancelled') return;
+
+      const scaleTime = s.time || '18:30';
+
+      // 1. Notificação no dia da escala (HOJE)
+      if (s.date === todayStr) {
+        const key = `servus_notif_today_${a.id}_${todayStr}`;
+        if (!localStorage.getItem(key)) {
+          triggerBrowserNotification(
+            '🔔 É hoje! Escala na AD Bethânia',
+            `Você está escalado(a) hoje para ${a.activity} às ${scaleTime} no ${s.title}. Que Deus abençoe seu serviço!`,
+            `scale-today-${a.id}`
+          );
+          localStorage.setItem(key, 'true');
+        }
+      }
+
+      // 2. Notificação 1 dia antes da escala (AMANHÃ)
+      if (s.date === tomorrowStr) {
+        const key = `servus_notif_1day_${a.id}_${tomorrowStr}`;
+        if (!localStorage.getItem(key)) {
+          triggerBrowserNotification(
+            '📅 Lembrete: Escala amanhã!',
+            `Você está escalado(a) amanhã para ${a.activity} às ${scaleTime} no ${s.title}. Chegue com antecedência!`,
+            `scale-1day-${a.id}`
+          );
+          localStorage.setItem(key, 'true');
+        }
+      }
+    });
+  });
 }
 
 async function checkBirthdayNotifications() {
@@ -1181,13 +1611,78 @@ async function checkBirthdayNotifications() {
     if (d.getMonth() === now.getMonth() && d.getDate() === now.getDate()) {
       const key = `${p.id}-${currentYear}`;
       if (!notifiedKeys.includes(key)) {
-        new Notification('Aniversário na equipe 🎂', {
-          body: 'Hoje é aniversário de ' + p.name + '!'
-        });
+        triggerBrowserNotification('Aniversário na equipe 🎂', 'Hoje é aniversário de ' + p.name + '!', `bday-${p.id}`);
         await api.saveNotifiedKey(key);
       }
     }
   });
+}
+
+// ==========================================
+// PWA & INSTALAÇÃO NO CELULAR
+// ==========================================
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('btnInstallPwa');
+  if (btn) btn.style.display = 'flex';
+});
+
+function initPwa() {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        console.log('SERVUS Service Worker ativo:', reg.scope);
+      }).catch(err => {
+        console.log('SW registration note:', err);
+      });
+    });
+  }
+
+  const btn = document.getElementById('btnInstallPwa');
+  if (btn) {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (!isStandalone) {
+      btn.style.display = 'flex';
+    }
+
+    btn.onclick = async () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          btn.style.display = 'none';
+        }
+        deferredInstallPrompt = null;
+      } else {
+        openModal(
+          'Salvar SERVUS no Celular',
+          `
+            <div style="text-align:center;padding:12px 6px">
+              <div style="font-size:48px;margin-bottom:12px">📲</div>
+              <h3 style="font-size:16px;margin-bottom:8px">Adicione à tela inicial</h3>
+              <p class="muted" style="font-size:13px;line-height:1.5;margin-bottom:16px">
+                Instale o SERVUS como aplicativo no seu telefone para acesso rápido e receber notificações!
+              </p>
+              <div style="background:var(--surface2);padding:14px;border-radius:12px;text-align:left;font-size:12px;line-height:1.6">
+                <b>No iPhone (Safari):</b><br>
+                1. Toque no botão de <b>Compartilhar</b> (quadrado com seta 📤) na barra inferior.<br>
+                2. Role a lista e toque em <b>"Adicionar à Tela de Início" ➕</b>.<br>
+                3. Toque em <b>Adicionar</b> no canto superior direito.<br><br>
+                <b>No Android (Chrome):</b><br>
+                1. Toque nos <b>3 pontinhos (⋮)</b> no topo direito.<br>
+                2. Selecione <b>"Instalar aplicativo"</b> ou <b>"Adicionar à tela inicial"</b>.
+              </div>
+            </div>
+          `,
+          'Entendi',
+          () => closeModal()
+        );
+      }
+    };
+  }
 }
 
 // ==========================================
@@ -1407,6 +1902,9 @@ function initTheme() {
 }
 
 function initEvents() {
+  // Inicializar PWA
+  initPwa();
+
   // Inicializar Tema Escuro / Claro
   initTheme();
 
@@ -1421,7 +1919,12 @@ function initEvents() {
   };
 
   // Botões do Topo (Notificações e Avisos)
-  document.getElementById('btnTopBell').onclick = openNotificationsModal;
+  document.getElementById('btnTopBell').onclick = async () => {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      await Notification.requestPermission();
+    }
+    openNotificationsModal();
+  };
 
   // Atalhos na Home
   document.getElementById('btnHomeNewScale').onclick = () => openScaleModal();
