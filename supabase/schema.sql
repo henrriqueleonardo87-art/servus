@@ -68,7 +68,8 @@ CREATE INDEX IF NOT EXISTS idx_assignments_person_id ON scale_assignments(person
 CREATE INDEX IF NOT EXISTS idx_people_birthday ON people(birthday);
 
 -- ==============================================================================
--- Habilitar Row Level Security (RLS)
+-- Habilitar Row Level Security (RLS) e Políticas de Acesso Público Direto
+-- (Sem necessidade de login/autenticação: qualquer visitante pode usar a plataforma)
 -- ==============================================================================
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE people ENABLE ROW LEVEL SECURITY;
@@ -76,26 +77,53 @@ ALTER TABLE scales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scale_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE system_notifications ENABLE ROW LEVEL SECURITY;
 
--- Políticas de acesso público para anon e authenticated
+-- Limpar quaisquer políticas anteriores
 DROP POLICY IF EXISTS "Public access to activities" ON activities;
-CREATE POLICY "Public access to activities" ON activities
-    FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow authenticated full access to activities" ON activities;
+DROP POLICY IF EXISTS "Allow anon read access to activities" ON activities;
 
 DROP POLICY IF EXISTS "Public access to people" ON people;
-CREATE POLICY "Public access to people" ON people
-    FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow authenticated full access to people" ON people;
+DROP POLICY IF EXISTS "Allow anon read access to people" ON people;
 
 DROP POLICY IF EXISTS "Public access to scales" ON scales;
-CREATE POLICY "Public access to scales" ON scales
-    FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow authenticated full access to scales" ON scales;
+DROP POLICY IF EXISTS "Allow anon read access to scales" ON scales;
 
 DROP POLICY IF EXISTS "Public access to scale_assignments" ON scale_assignments;
-CREATE POLICY "Public access to scale_assignments" ON scale_assignments
-    FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow authenticated full access to scale_assignments" ON scale_assignments;
+DROP POLICY IF EXISTS "Allow anon read access to scale_assignments" ON scale_assignments;
+DROP POLICY IF EXISTS "Allow anon to confirm assignment" ON scale_assignments;
 
 DROP POLICY IF EXISTS "Public access to system_notifications" ON system_notifications;
+DROP POLICY IF EXISTS "Allow authenticated full access to system_notifications" ON system_notifications;
+DROP POLICY IF EXISTS "Allow anon read and insert to system_notifications" ON system_notifications;
+
+-- Políticas de acesso livre para leitura e escrita sem autenticação
+CREATE POLICY "Public access to activities" ON activities
+    FOR ALL TO public USING (true) WITH CHECK (true);
+
+CREATE POLICY "Public access to people" ON people
+    FOR ALL TO public USING (true) WITH CHECK (true);
+
+CREATE POLICY "Public access to scales" ON scales
+    FOR ALL TO public USING (true) WITH CHECK (true);
+
+CREATE POLICY "Public access to scale_assignments" ON scale_assignments
+    FOR ALL TO public USING (true) WITH CHECK (true);
+
 CREATE POLICY "Public access to system_notifications" ON system_notifications
-    FOR ALL USING (true) WITH CHECK (true);
+    FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- Permissões de uso do schema public para a API Data (REST)
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
 
 -- Habilitar Realtime nas tabelas
 ALTER PUBLICATION supabase_realtime ADD TABLE activities;
