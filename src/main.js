@@ -8,6 +8,26 @@ let scales = [];
 let selectedVolunteerId = null;
 let month = new Date(2026, 10, 1);
 let scaleTab = 'all';
+let currentUser = null;
+
+// Configuração do WhatsApp do responsável (Welson)
+const WELSON_PHONE = '5531975284359';
+
+export function getWelsonWhatsappUrl(userName, activity, scaleTitle, scaleDate, scaleTime, reason = '') {
+  let message = `Olá Welson! Aqui é *${userName}* da equipe SERVUS (AD Bethânia).\n\n` +
+    `Preciso cancelar minha participação na seguinte escala:\n` +
+    `• *Atividade:* ${activity}\n` +
+    `• *Programação:* ${scaleTitle}\n` +
+    `• *Data/Horário:* ${scaleDate} às ${scaleTime}\n`;
+
+  if (reason) {
+    message += `• *Motivo:* ${reason}\n`;
+  }
+
+  message += `\nEstou avisando para que possamos organizar a troca/substituição. Deus abençoe!`;
+
+  return `https://wa.me/${WELSON_PHONE}?text=${encodeURIComponent(message)}`;
+}
 
 // ==========================================
 // UTILITÁRIOS
@@ -39,6 +59,27 @@ function notify(text) {
   el.textContent = text;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function updateProfileUI() {
+  if (!currentUser) return;
+  const userInitials = initials(currentUser.name);
+
+  const sideAvatar = document.getElementById('userAvatarSide');
+  const sideName = document.getElementById('userNameSide');
+  const sideRole = document.getElementById('userRoleSide');
+
+  const topAvatar = document.getElementById('userAvatarTop');
+  const topName = document.getElementById('userNameTop');
+  const topRole = document.getElementById('userRoleTop');
+
+  if (sideAvatar) sideAvatar.textContent = userInitials;
+  if (sideName) sideName.textContent = currentUser.name;
+  if (sideRole) sideRole.textContent = currentUser.role || 'Coordenação';
+
+  if (topAvatar) topAvatar.textContent = userInitials;
+  if (topName) topName.textContent = currentUser.name;
+  if (topRole) topRole.textContent = currentUser.role || 'Coordenação';
 }
 
 // ==========================================
@@ -123,12 +164,26 @@ async function loadDataFromSupabase() {
     activities = fetchedActivities;
     scales = fetchedScales;
 
+    // Se o usuário logado tiver uma pessoa vinculada, seleciona ela por padrão
+    if (currentUser) {
+      const match = people.find(p => {
+        if (currentUser.personId && String(p.id) === String(currentUser.personId)) return true;
+        if (currentUser.name && p.name.toLowerCase() === currentUser.name.toLowerCase()) return true;
+        return false;
+      });
+      if (match) {
+        selectedVolunteerId = match.id;
+        currentUser.personId = match.id;
+      }
+    }
+
     if (!selectedVolunteerId && people.length > 0) {
       selectedVolunteerId = people[0].id;
     }
 
     renderAll();
     checkBirthdayNotifications();
+    checkUserScaleAlerts();
   } catch (err) {
     console.error('Erro ao buscar dados do Supabase:', err);
     notify('Erro ao sincronizar com Supabase: ' + err.message);
@@ -232,6 +287,111 @@ function renderHome() {
   const percent = totalAssignments > 0 ? Math.round((confirmedAssignments / totalAssignments) * 100) : 100;
   document.getElementById('statConfirmations').textContent = percent + '%';
   document.getElementById('pendingCount').textContent = Math.max(0, totalAssignments - confirmedAssignments);
+
+  // Alerta de escalas para o usuário logado
+  checkUserScaleAlerts();
+}
+
+function checkUserScaleAlerts() {
+  const banner = document.getElementById('homeScaleAlert');
+  const bellDot = document.getElementById('bellDot');
+  if (!banner && !bellDot) return;
+
+  const today = localISO(new Date());
+  const userPersonId = currentUser?.personId;
+
+  const myPending = [];
+  scales.forEach(s => {
+    if (s.date >= today) {
+      s.assignments.forEach(a => {
+        const isUser = (userPersonId && String(a.person) === String(userPersonId)) ||
+                       (currentUser?.name && findPerson(a.person)?.name.toLowerCase() === currentUser.name.toLowerCase());
+        if (isUser && (a.status === 'pending' || (!a.confirmed && a.status !== 'cancelled'))) {
+          myPending.push({ ...a, scale: s });
+        }
+      });
+    }
+  });
+
+  if (bellDot) {
+    bellDot.style.display = myPending.length > 0 ? 'inline-block' : 'none';
+  }
+
+  if (banner) {
+    if (myPending.length > 0) {
+      banner.style.display = 'flex';
+      banner.innerHTML = `
+        <div class="scale-alert-content">
+          <span class="scale-alert-icon">🔔</span>
+          <div class="scale-alert-text">
+            <b>Você possui ${myPending.length} escala(s) aguardando sua confirmação!</b>
+            <small>Confirme sua presença ou solicite cancelamento/troca com antecedência.</small>
+          </div>
+        </div>
+        <button class="btn primary" id="btnAlertGoMine" style="padding:8px 16px;font-size:12px;white-space:nowrap">Minha Escala →</button>
+      `;
+      const btnGo = document.getElementById('btnAlertGoMine');
+      if (btnGo) {
+        btnGo.onclick = () => {
+          if (currentUser?.personId) {
+            selectedVolunteerId = currentUser.personId;
+          }
+          navigate('mine');
+        };
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+}
+
+function openNotificationsModal() {
+  const today = localISO(new Date());
+  const userPersonId = currentUser?.personId;
+
+  const myUpcoming = [];
+  scales.forEach(s => {
+    if (s.date >= today) {
+      s.assignments.forEach(a => {
+        const isUser = (userPersonId && String(a.person) === String(userPersonId)) ||
+                       (currentUser?.name && findPerson(a.person)?.name.toLowerCase() === currentUser.name.toLowerCase());
+        if (isUser) {
+          myUpcoming.push({ ...a, scale: s });
+        }
+      });
+    }
+  });
+
+  let html = '';
+  if (myUpcoming.length > 0) {
+    html += `<h3 style="margin:0 0 12px;font-size:14px;color:var(--text)">Suas Escalas Programadas</h3><div class="notif-list" style="display:flex;flex-direction:column;gap:10px">`;
+    html += myUpcoming.map(item => {
+      const isCancelled = item.status === 'cancelled';
+      const isConfirmed = item.status === 'confirmed' || (item.confirmed && !isCancelled);
+      return `
+        <div style="background:#f9f9fb;border:1px solid #e9ebef;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div>
+            <b>${item.activity}</b> · ${item.scale.title}
+            <div class="muted small">${fmt(item.scale.date)} às ${item.scale.time}</div>
+          </div>
+          <div>
+            ${isConfirmed ? '<span class="pill confirmed">✓ Confirmada</span>' : isCancelled ? '<span class="pill cancelled">✕ Cancelada</span>' : '<span class="pill pending">◷ Pendente</span>'}
+          </div>
+        </div>
+      `;
+    }).join('');
+    html += `</div>`;
+  } else {
+    html += `<p class="muted">Você não possui escalas pendentes no momento.</p>`;
+  }
+
+  openModal('Notificações e Escalas', html, 'Ir para Minha Escala', () => {
+    closeModal();
+    if (currentUser?.personId) {
+      selectedVolunteerId = currentUser.personId;
+    }
+    navigate('mine');
+  });
 }
 
 // ==========================================
@@ -264,10 +424,27 @@ function renderScales() {
         ${fmt(s.date)}
         <div class="muted small">${s.time}</div>
       </td>
-      <td>${s.assignments.length} pessoas</td>
+      <td>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:280px">
+          ${s.assignments.map(a => {
+            const p = findPerson(a.person);
+            const pName = p ? p.name.split(' ')[0] : 'Voluntário';
+            let pillClass = 'pending';
+            let icon = '◷';
+            if (a.status === 'confirmed' || (a.confirmed && a.status !== 'cancelled')) {
+              pillClass = 'confirmed';
+              icon = '✓';
+            } else if (a.status === 'cancelled') {
+              pillClass = 'cancelled';
+              icon = '✕';
+            }
+            return `<span class="pill ${pillClass}" style="font-size:10px;padding:2px 6px" title="${p ? p.name : ''} - ${a.activity} (${a.status || 'pendente'})">${icon} ${pName} (${a.activity})</span>`;
+          }).join('') || '<span class="muted small">Sem equipe</span>'}
+        </div>
+      </td>
       <td>
         <span class="pill ${s.assignments.length ? '' : 'pending'}">
-          ${s.assignments.length ? 'Equipe definida' : 'Sem equipe'}
+          ${s.assignments.length ? `${s.assignments.length} escalado(s)` : 'Sem equipe'}
         </span>
       </td>
       <td>
@@ -385,28 +562,58 @@ function renderMine() {
     });
   });
 
-  myAssignments.sort((a, b) => a.scale.date.localeCompare(b.scale.date));
+  myAssignments.sort((a, b) => a.scale.date.localeCompare(b.scale.date) || (a.scale.time || '').localeCompare(b.scale.time || ''));
 
   container.innerHTML = myAssignments.length ? myAssignments.map(item => {
     const act = activities.find(x => x.name === item.activity);
     const icon = act?.icon || '✳';
+    const isCancelled = item.status === 'cancelled';
+    const isConfirmed = item.status === 'confirmed' || (item.confirmed && !isCancelled);
+
+    const personName = currentPerson ? currentPerson.name : (currentUser ? currentUser.name : 'Voluntário');
+    const waUrl = getWelsonWhatsappUrl(personName, item.activity, item.scale.title, fmt(item.scale.date), item.scale.time, item.cancellationReason);
+
+    let actionsHtml = '';
+    if (isConfirmed) {
+      actionsHtml = `
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          <span class="pill confirmed">✓ Confirmado</span>
+          <button class="btn-danger-mini btn-cancel-mine" data-assignment-id="${item.id}" data-activity="${item.activity}" data-scale-title="${item.scale.title}" data-scale-date="${fmt(item.scale.date)}" data-scale-time="${item.scale.time}">Cancelar Escala</button>
+        </div>
+      `;
+    } else if (isCancelled) {
+      actionsHtml = `
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          <span class="pill cancelled">✕ Cancelado</span>
+          <button class="mini btn-reopen-mine" data-assignment-id="${item.id}">Reverter Presença</button>
+          <a href="${waUrl}" target="_blank" class="btn-whatsapp">WhatsApp Welson ↗</a>
+        </div>
+      `;
+    } else {
+      actionsHtml = `
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          <span class="pill pending">◷ Pendente</span>
+          <button class="mini btn-confirm-mine" data-assignment-id="${item.id}" style="background:#249b72;color:#fff;font-weight:600">✓ Confirmar</button>
+          <button class="btn-danger-mini btn-cancel-mine" data-assignment-id="${item.id}" data-activity="${item.activity}" data-scale-title="${item.scale.title}" data-scale-date="${fmt(item.scale.date)}" data-scale-time="${item.scale.time}">✕ Cancelar</button>
+        </div>
+      `;
+    }
 
     return `
-      <div class="listrow">
+      <div class="listrow" style="flex-wrap:wrap;gap:12px;padding:14px 12px;border-bottom:1px solid #f0f1f5">
         <div class="serviceicon">${icon}</div>
-        <div class="grow">
-          <b>${item.activity}</b>
-          <small>${item.scale.title} · ${item.scale.place || 'Templo principal'}</small>
+        <div class="grow" style="min-width:180px">
+          <b style="font-size:14px">${item.activity}</b>
+          <div class="muted small">${item.scale.title} · ${item.scale.place || 'Templo principal'}</div>
+          ${item.cancellationReason ? `<div style="font-size:11px;color:#dc2626;margin-top:3px">Motivo do cancelamento: ${item.cancellationReason}</div>` : ''}
         </div>
-        <div style="text-align:right">
+        <div style="text-align:right;min-width:110px">
           <b>${fmt(item.scale.date)}</b>
-          <small>${item.scale.time}</small>
+          <div class="muted small">${item.scale.time}</div>
         </div>
-        ${item.confirmed ? `
-          <span class="pill" style="margin-left:8px">✓ Confirmado</span>
-        ` : `
-          <button class="mini btn-confirm-mine" data-assignment-id="${item.id}" style="margin-left:8px">Confirmar</button>
-        `}
+        <div style="margin-left:auto">
+          ${actionsHtml}
+        </div>
       </div>
     `;
   }).join('') : `
@@ -416,16 +623,71 @@ function renderMine() {
     </div>
   `;
 
+  // Listener para confirmar presença
   container.querySelectorAll('.btn-confirm-mine').forEach(b => {
     b.onclick = async () => {
       const aId = Number(b.dataset.assignmentId);
       try {
         await api.confirmAssignment(aId);
-        notify('Presença confirmada no Supabase com sucesso!');
+        notify('Presença confirmada com sucesso!');
         await loadDataFromSupabase();
       } catch (err) {
         notify('Erro ao confirmar: ' + err.message);
       }
+    };
+  });
+
+  // Listener para reverter presença
+  container.querySelectorAll('.btn-reopen-mine').forEach(b => {
+    b.onclick = async () => {
+      const aId = Number(b.dataset.assignmentId);
+      try {
+        await api.reopenAssignment(aId);
+        notify('Presença reativada com sucesso!');
+        await loadDataFromSupabase();
+      } catch (err) {
+        notify('Erro ao reativar: ' + err.message);
+      }
+    };
+  });
+
+  // Listener para cancelar escala e abrir WhatsApp do Welson
+  container.querySelectorAll('.btn-cancel-mine').forEach(b => {
+    b.onclick = () => {
+      const aId = Number(b.dataset.assignmentId);
+      const activity = b.dataset.activity;
+      const title = b.dataset.scaleTitle;
+      const date = b.dataset.scaleDate;
+      const time = b.dataset.scaleTime;
+      const personName = currentPerson ? currentPerson.name : (currentUser ? currentUser.name : 'Voluntário');
+
+      openModal(
+        'Cancelar Escala',
+        `
+        <p>Você tem certeza que deseja cancelar sua presença em <b>${activity}</b> no <b>${title}</b> (${date} às ${time})?</p>
+        <p style="margin-top:12px;color:var(--muted);font-size:13px">
+          Ao confirmar o cancelamento, seu status será atualizado e você será encaminhado diretamente para o <b>WhatsApp do Welson</b> para comunicar a coordenação e solicitar a troca.
+        </p>
+        <div class="field" style="margin-top:16px">
+          <label for="modalCancelReason">Motivo da ausência (opcional):</label>
+          <input type="text" id="modalCancelReason" class="search" placeholder="Ex: Imprevisto de trabalho, viagem..." style="width:100%">
+        </div>
+        `,
+        'Confirmar Cancelamento e Abrir WhatsApp',
+        async () => {
+          const reason = document.getElementById('modalCancelReason')?.value.trim() || '';
+          try {
+            await api.cancelAssignment(aId, reason);
+            closeModal();
+            const waUrl = getWelsonWhatsappUrl(personName, activity, title, date, time, reason);
+            window.open(waUrl, '_blank');
+            notify('Escala cancelada. Encaminhando para o WhatsApp do Welson...');
+            await loadDataFromSupabase();
+          } catch (err) {
+            notify('Erro ao cancelar: ' + err.message);
+          }
+        }
+      );
     };
   });
 }
@@ -930,6 +1192,162 @@ async function checkBirthdayNotifications() {
 // ==========================================
 // INICIALIZAÇÃO E EVENT LISTENERS
 // ==========================================
+function initAuth() {
+  const loginScreen = document.getElementById('loginScreen');
+  const appRoot = document.getElementById('appRoot');
+  const loginForm = document.getElementById('loginForm');
+  const numberInput = document.getElementById('numero');
+  const passwordInput = document.getElementById('senha');
+  const togglePassword = document.getElementById('togglePassword');
+  const rememberCheckbox = document.getElementById('remember');
+  const feedbackEl = document.getElementById('feedback');
+  const helpLink = document.getElementById('helpLink');
+
+  // Toggle visibilidade da senha
+  if (togglePassword && passwordInput) {
+    togglePassword.addEventListener('click', () => {
+      const showing = passwordInput.type === 'text';
+      passwordInput.type = showing ? 'password' : 'text';
+      togglePassword.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
+      togglePassword.title = showing ? 'Mostrar senha' : 'Ocultar senha';
+    });
+  }
+
+  // Preencher número salvo se houver
+  try {
+    const savedNum = localStorage.getItem('servus_login_numero') || '';
+    if (savedNum && numberInput) {
+      numberInput.value = savedNum;
+      if (rememberCheckbox) rememberCheckbox.checked = true;
+    }
+  } catch (e) {}
+
+  // Ajuda
+  if (helpLink) {
+    helpLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (feedbackEl) {
+        feedbackEl.textContent = 'Para recuperar ou solicitar seu acesso, procure a coordenação da AD Bethânia (Welson ou Leonardo).';
+        feedbackEl.classList.remove('error');
+        feedbackEl.classList.add('show');
+      }
+    });
+  }
+
+  function validateField(input, messageId) {
+    const field = input.closest('.field');
+    const valid = input.value.trim().length > 0;
+    if (field) field.classList.toggle('invalid', !valid);
+    input.setAttribute('aria-invalid', String(!valid));
+    return valid;
+  }
+
+  if (numberInput) {
+    numberInput.addEventListener('input', () => validateField(numberInput, 'numeroErro'));
+  }
+  if (passwordInput) {
+    passwordInput.addEventListener('input', () => validateField(passwordInput, 'senhaErro'));
+  }
+
+  // Formulário de Login
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const numOk = validateField(numberInput, 'numeroErro');
+      const passOk = validateField(passwordInput, 'senhaErro');
+      if (!numOk || !passOk) {
+        if (feedbackEl) {
+          feedbackEl.textContent = 'Preencha seu número e sua senha para continuar.';
+          feedbackEl.classList.add('show', 'error');
+        }
+        return;
+      }
+
+      const submitBtn = loginForm.querySelector('.submit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `Entrando...`;
+      }
+
+      try {
+        const user = await api.loginUser(numberInput.value, passwordInput.value);
+        currentUser = user;
+
+        if (rememberCheckbox && rememberCheckbox.checked) {
+          localStorage.setItem('servus_login_numero', numberInput.value.trim());
+        } else {
+          localStorage.removeItem('servus_login_numero');
+        }
+
+        localStorage.setItem('servus_session', JSON.stringify(user));
+
+        if (user.personId) {
+          selectedVolunteerId = user.personId;
+        }
+
+        updateProfileUI();
+
+        loginScreen.classList.add('hidden');
+        appRoot.classList.remove('hidden');
+
+        notify(`Bem-vindo(a), ${user.name}!`);
+        await loadDataFromSupabase();
+        checkUserScaleAlerts();
+      } catch (err) {
+        if (feedbackEl) {
+          feedbackEl.textContent = err.message || 'Número ou senha incorretos.';
+          feedbackEl.classList.add('show', 'error');
+        }
+        numberInput.closest('.field')?.classList.add('invalid');
+        passwordInput.closest('.field')?.classList.add('invalid');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `Entrar <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        }
+      }
+    });
+  }
+
+  // Logout
+  const doLogout = () => {
+    currentUser = null;
+    localStorage.removeItem('servus_session');
+    loginScreen.classList.remove('hidden');
+    appRoot.classList.add('hidden');
+    if (passwordInput) passwordInput.value = '';
+    if (feedbackEl) feedbackEl.classList.remove('show', 'error');
+    notify('Você saiu do sistema.');
+  };
+
+  const btnLogoutSide = document.getElementById('btnLogoutSide');
+  const btnLogoutTop = document.getElementById('btnLogoutTop');
+  if (btnLogoutSide) btnLogoutSide.onclick = doLogout;
+  if (btnLogoutTop) btnLogoutTop.onclick = doLogout;
+
+  // Restaurar sessão se já existir
+  try {
+    const sessionStr = localStorage.getItem('servus_session');
+    if (sessionStr) {
+      const savedUser = JSON.parse(sessionStr);
+      if (savedUser && savedUser.name) {
+        currentUser = savedUser;
+        if (savedUser.personId) {
+          selectedVolunteerId = savedUser.personId;
+        }
+        updateProfileUI();
+        loginScreen.classList.add('hidden');
+        appRoot.classList.remove('hidden');
+        return true;
+      }
+    }
+  } catch (e) {}
+
+  loginScreen.classList.remove('hidden');
+  appRoot.classList.add('hidden');
+  return false;
+}
+
 function initEvents() {
   // Navegação da Sidebar
   document.querySelectorAll('.nav button').forEach(btn => {
@@ -941,8 +1359,8 @@ function initEvents() {
     document.getElementById('sidebar').classList.toggle('open');
   };
 
-  // Botões do Topo
-  document.getElementById('btnTopBell').onclick = () => notify('Você está em dia com a equipe!');
+  // Botões do Topo (Notificações e Avisos)
+  document.getElementById('btnTopBell').onclick = openNotificationsModal;
 
   // Atalhos na Home
   document.getElementById('btnHomeNewScale').onclick = () => openScaleModal();
@@ -1003,4 +1421,5 @@ function initEvents() {
 
 // Iniciar Aplicação
 initEvents();
+const hasSession = initAuth();
 loadDataFromSupabase();
