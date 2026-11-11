@@ -109,7 +109,6 @@ function renderAll() {
 // ==========================================
 async function loadDataFromSupabase() {
   if (!isSupabaseConfigured) {
-    document.getElementById('supabaseNotice').style.display = 'flex';
     return;
   }
 

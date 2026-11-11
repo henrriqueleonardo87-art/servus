@@ -30,7 +30,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -142,6 +145,16 @@ button {
   margin-top: auto;
   border-top: 1px solid #393950;
   padding: 17px 8px 0;
+}
+
+.app-version {
+  font-size: 10px;
+  color: #777891;
+  letter-spacing: 0.8px;
+  margin-top: 14px;
+  text-align: center;
+  opacity: 0.55;
+  user-select: none;
 }
 
 .profile {
@@ -315,7 +328,8 @@ h3 {
   margin-bottom: 20px;
 }
 
-.stat, .panel {
+.stat,
+.panel {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -589,7 +603,10 @@ h3 {
   outline: none;
 }
 
-.search:focus, input:focus, select:focus, textarea:focus {
+.search:focus,
+input:focus,
+select:focus,
+textarea:focus {
   border-color: #a69df0;
   box-shadow: 0 0 0 3px #6657d914;
   outline: 0;
@@ -825,7 +842,9 @@ h3 {
   color: #656b79;
 }
 
-.field input, .field select, .field textarea {
+.field input,
+.field select,
+.field textarea {
   width: 100%;
   padding: 11px;
   border: 1px solid var(--line);
@@ -948,33 +967,6 @@ h3 {
   display: none;
 }
 
-/* Supabase Connection Banner */
-.connection-banner {
-  background: #fff8eb;
-  border: 1px solid #ffe1a6;
-  color: #925c0b;
-  padding: 12px 18px;
-  border-radius: 12px;
-  margin-bottom: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13px;
-}
-
-.connection-banner strong {
-  color: #704400;
-}
-
-.connection-banner code {
-  background: #faeacc;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-family: monospace;
-}
-
 .loading-overlay {
   display: inline-block;
   color: var(--muted);
@@ -987,14 +979,17 @@ h3 {
   .sidebar {
     width: 220px;
   }
+
   .main {
     margin-left: 220px;
     width: calc(100% - 220px);
     padding: 24px;
   }
+
   .cards {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .grid2 {
     grid-template-columns: 1fr;
   }
@@ -1006,84 +1001,108 @@ h3 {
     transform: translateX(-100%);
     transition: .25s;
   }
+
   .sidebar.open {
     transform: translateX(0);
   }
+
   .main {
     margin: 0;
     width: 100%;
     padding: 18px 15px 35px;
   }
+
   .mobilemenu {
     display: inline-grid;
   }
+
   .topbar {
     margin-bottom: 22px;
   }
+
   .heading {
     align-items: flex-start;
     flex-direction: column;
   }
+
   .heading .btn {
     width: 100%;
     justify-content: center;
   }
+
   h1 {
     font-size: 24px;
   }
+
   .cards {
     gap: 9px;
   }
+
   .stat {
     padding: 14px;
   }
+
   .statnum {
     font-size: 23px;
   }
+
   .stathead {
     font-size: 10px;
   }
+
   .taskgrid {
     grid-template-columns: 1fr;
   }
+
   .calendar {
     grid-template-columns: repeat(7, minmax(38px, 1fr));
     overflow-x: auto;
   }
+
   .calcell {
     min-height: 82px;
     padding: 5px;
   }
+
   .cal-event {
     font-size: 8px;
     padding: 4px;
   }
+
   .week {
     gap: 4px;
   }
+
   .day {
     padding: 8px 2px;
     min-height: 70px;
   }
+
   .day strong {
     font-size: 14px;
   }
+
   .formgrid {
     grid-template-columns: 1fr;
   }
+
   .field.full {
     grid-column: auto;
   }
+
   .search {
     min-width: 0;
     width: 100%;
   }
+
   .toolbar {
     width: 100%;
   }
+
   .toolbar .search {
     flex: 1;
   }
+
   .topright .profile {
     display: none;
   }
