@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SERVUS | AD Regional Bethânia</title>
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brandmark">S</div>
+      <div>
+        <strong>SERVUS</strong>
+        <small>AD Regional Bethania</small>
+      </div>
+    </div>
+    <div class="navlabel">Workspace</div>
+    <nav class="nav">
+      <button class="active" data-page="home"><span class="ico">⌂</span> Visão geral</button>
+      <button data-page="scales"><span class="ico">▦</span> Escalas <span class="count" id="navScales">0</span></button>
+      <button data-page="calendar"><span class="ico">▣</span> Agenda</button>
+      <button data-page="mine"><span class="ico">◷</span> Minha escala</button>
+      <div class="navlabel">Organização</div>
+      <button data-page="people"><span class="ico">♧</span> Equipe</button>
+      <button data-page="activities"><span class="ico">✳</span> Atividades</button>
+    </nav>
+    <div class="sidebottom">
+      <div class="profile">
+        <div class="avatar">LH</div>
+        <div>
+          <b style="font-size:12px">Coordenação</b>
+          <small>Equipe de mídia</small>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="iconbtn mobilemenu" id="btnToggleMenu">☰</button>
+        <div class="crumb">Workspace <span style="padding:0 7px">/</span><b id="crumb">Visão geral</b></div>
+      </div>
+      <div class="topright">
+        <button class="iconbtn" id="btnTopBell" title="Notificações">♧<i class="dot"></i></button>
+        <div class="profile">
+          <div class="avatar">LH</div>
+          <div>
+            <b style="font-size:12px">Coordenação</b>
+            <small>Administrador</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banner caso Supabase precise de configuração -->
+    <div id="supabaseNotice" class="connection-banner" style="display:none">
+      <div>
+        <strong>⚡ Conexão Supabase Pendente:</strong>
+        Para sincronização em tempo real e banco de dados ativo, configure as chaves no arquivo <code>.env</code>.
+      </div>
+    </div>
+
+    <!-- PÁGINA 1: VISÃO GERAL -->
+    <section class="page active" id="page-home">
+      <div class="heading">
+        <div>
+          <div class="eyebrow">Assembleia de Deus Regional Bethania · <span id="homeDate"></span></div>
+          <h1>Bom dia! Vamos servir? ✨</h1>
+          <div class="sub">Tudo organizado para que cada pessoa saiba onde e como contribuir.</div>
+        </div>
+        <button class="btn primary" id="btnHomeNewScale">＋ Criar escala</button>
+      </div>
+
+      <div class="cards">
+        <div class="stat">
+          <div class="stathead">Pessoas na equipe <span class="staticon">♧</span></div>
+          <div class="statnum" id="statPeople">0</div>
+          <div class="trend">Equipe cadastrada</div>
+        </div>
+        <div class="stat">
+          <div class="stathead">Escalas neste mês <span class="staticon">▦</span></div>
+          <div class="statnum" id="statScales">0</div>
+          <div class="trend">Programação mensal</div>
+        </div>
+        <div class="stat">
+          <div class="stathead">Atividades disponíveis <span class="staticon">✳</span></div>
+          <div class="statnum" id="statActivities">0</div>
+          <div class="trend">Frentes de serviço</div>
+        </div>
+        <div class="stat">
+          <div class="stathead">Confirmações <span class="staticon">✓</span></div>
+          <div class="statnum" id="statConfirmations">--%</div>
+          <div class="trend">↑ Boa participação</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <div class="panel">
+            <div class="panelhead">
+              <div>
+                <h2>Próximas programações</h2>
+                <div class="muted small" style="margin-top:5px">O que vem pela frente</div>
+              </div>
+              <button class="btn ghost" id="btnGoToCalendar">Ver agenda →</button>
+            </div>
+            <div id="todayRoster"></div>
+            <div id="upcoming"></div>
+          </div>
+          <div class="panel">
+            <div class="panelhead">
+              <h2>Panorama da equipe</h2>
+              <span class="pill purple">Este mês</span>
+            </div>
+            <div class="taskgrid">
+              <div class="task">
+                <span class="staticon">🎥</span>
+                <b>Multimídia</b>
+                <small>Projeção, transmissão e slides</small>
+              </div>
+              <div class="task">
+                <span class="staticon">📷</span>
+                <b>Fotografia</b>
+                <small>Registros e cobertura</small>
+              </div>
+              <div class="task">
+                <span class="staticon">🎚</span>
+                <b>Áudio</b>
+                <small>Som e operação técnica</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <div class="panelhead">
+              <h2>Esta semana</h2>
+              <button class="btn ghost" id="btnGoToCalendarWeek">Abrir →</button>
+            </div>
+            <div class="week" id="week"></div>
+          </div>
+          <div class="panel">
+            <div class="panelhead">
+              <h2>Precisa de atenção</h2>
+              <span class="pill pending">Acompanhar</span>
+            </div>
+            <div class="service">
+              <div class="serviceicon">◷</div>
+              <div class="serviceinfo">
+                <b>Confirmações pendentes</b>
+                <small>Confira quem ainda não confirmou presença.</small>
+              </div>
+              <b id="pendingCount">0</b>
+            </div>
+            <div class="service">
+              <div class="serviceicon">＋</div>
+              <div class="serviceinfo">
+                <b>Organize a próxima escala</b>
+                <small>Distribua as atividades com antecedência.</small>
+              </div>
+              <button class="mini" id="btnAttentionNewScale">Criar</button>
+            </div>
+            <div class="service">
+              <div class="serviceicon">🎂</div>
+              <div class="serviceinfo">
+                <b>Acompanhe os aniversários</b>
+                <small>Cadastre as datas na ficha de cada voluntário.</small>
+              </div>
+              <button class="mini" id="btnAttentionPeople">Ver equipe</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PÁGINA 2: ESCALAS -->
+    <section class="page" id="page-scales">
+      <div class="heading">
+        <div>
+          <div class="eyebrow">Planejamento</div>
+          <h1>Escalas</h1>
+          <div class="sub">Monte equipes, distribua responsabilidades e acompanhe confirmações.</div>
+        </div>
+        <button class="btn primary" id="btnNewScale">＋ Nova escala</button>
+      </div>
+      <div class="panel">
+        <div class="panelhead">
+          <div class="toolbar">
+            <input class="search" id="scaleSearch" placeholder="Buscar programação...">
+            <select class="search" id="scaleFilter">
+              <option value="">Todas as programações</option>
+              <option>Culto</option>
+              <option>Evento</option>
+              <option>Ensaio</option>
+              <option>Reunião</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <div class="tabs">
+            <button class="active" id="tabScaleAll">Todas</button>
+            <button id="tabScaleUpcoming">Próximas</button>
+          </div>
+        </div>
+        <div class="tablewrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Programação</th>
+                <th>Data e horário</th>
+                <th>Equipe escalada</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="scaleRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PÁGINA 3: AGENDA -->
+    <section class="page" id="page-calendar">
+      <div class="heading">
+        <div>
+          <div class="eyebrow">Programação</div>
+          <h1>Agenda da equipe</h1>
+          <div class="sub">Uma visão clara de todos os compromissos e serviços.</div>
+        </div>
+        <button class="btn primary" id="btnCalNewScale">＋ Adicionar programação</button>
+      </div>
+      <div class="panel">
+        <div class="panelhead">
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="mini" id="btnPrevMonth">←</button>
+            <h2 id="monthLabel">Novembro 2026</h2>
+            <button class="mini" id="btnNextMonth">→</button>
+          </div>
+          <div class="tabs">
+            <button class="active">Mês</button>
+            <button id="btnCalMySchedule">Minha agenda</button>
+          </div>
+        </div>
+        <div class="calendar" id="calendarGrid"></div>
+      </div>
+    </section>
+
+    <!-- PÁGINA 4: MINHA ESCALA -->
+    <section class="page" id="page-mine">
+      <div class="heading">
+        <div>
+          <div class="eyebrow">Área do voluntário</div>
+          <h1>Minha escala</h1>
+          <div class="sub">Seus compromissos, atividades e orientações em um só lugar.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="mineVolunteerSelect" class="search" style="min-width:180px;padding:8px 12px;font-size:12px;font-weight:600">
+            <!-- Populado dinamicamente -->
+          </select>
+          <button class="btn secondary" id="btnShareMine">↗ Compartilhar</button>
+        </div>
+      </div>
+      <div class="myhero">
+        <div class="eyebrow">Olá, <span id="mineVolunteerName">voluntário(a)</span>!</div>
+        <h2>Seu serviço faz a diferença.</h2>
+        <p>Confira seus próximos compromissos e mantenha sua disponibilidade atualizada.</p>
+      </div>
+      <div class="panel">
+        <div class="panelhead">
+          <h2>Próximas atividades</h2>
+          <span class="pill purple">Minha agenda</span>
+        </div>
+        <div id="myAssignments"></div>
+      </div>
+      <div class="panel">
+        <div class="panelhead">
+          <h2>Orientações importantes</h2>
+        </div>
+        <div class="service">
+          <div class="serviceicon">⏱</div>
+          <div class="serviceinfo">
+            <b>Chegue com antecedência</b>
+            <small>Procure chegar pelo menos 30 minutos antes do início.</small>
+          </div>
+        </div>
+        <div class="service">
+          <div class="serviceicon">✓</div>
+          <div class="serviceinfo">
+            <b>Confirme sua presença</b>
+            <small>Se não puder comparecer, avise a coordenação o quanto antes.</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PÁGINA 5: EQUIPE -->
+    <section class="page" id="page-people">
+      <div class="heading">
+        <div>
+          <div class="eyebrow">Pessoas</div>
+          <h1>Nossa equipe</h1>
+          <div class="sub">Cadastre voluntários, acompanhe suas áreas e organize os contatos.</div>
+        </div>
+        <button class="btn primary" id="btnNewPerson">＋ Adicionar pessoa</button>
+      </div>
+      <div class="panel">
+        <div class="panelhead">
+          <input class="search" id="peopleSearch" placeholder="Buscar por nome ou atividade...">
+          <span class="muted small" id="peopleCount">0 pessoas</span>
+        </div>
+        <div class="tablewrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Pessoa</th>
+                <th>Contato</th>
+                <th>O que faz / habilidades</th>
+                <th>Disponibilidade</th>
+                <th>Aniversário</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="peopleRows"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panelhead">
+          <div>
+            <h2>Aniversários e avisos</h2>
+            <div class="muted small" style="margin-top:5px">Acompanhe as próximas datas especiais da equipe.</div>
+          </div>
+          <button class="btn secondary" id="btnEnableBirthdayNotif">♧ Ativar notificações</button>
+        </div>
+        <div id="birthdayList"></div>
+      </div>
+    </section>
+
+    <!-- PÁGINA 6: ATIVIDADES -->
+    <section class="page" id="page-activities">
+      <div class="heading">
+        <div>
+          <div class="eyebrow">Frentes de serviço</div>
+          <h1>Atividades</h1>
+          <div class="sub">Defina as funções que podem ser atribuídas em cada programação.</div>
+        </div>
+        <button class="btn primary" id="btnNewActivity">＋ Nova atividade</button>
+      </div>
+      <div class="cards" id="activityCards"></div>
+      <div class="panel">
+        <div class="panelhead">
+          <h2>Catálogo de atividades</h2>
+          <span class="muted small">Gerencie as funções da equipe</span>
+        </div>
+        <div id="activityList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL GENÉRICO -->
+<div class="modalback" id="modalback">
+  <div class="modal">
+    <div class="modalhead">
+      <h2 id="modalTitle">Título do Modal</h2>
+      <button class="mini" id="btnCloseModal">✕</button>
+    </div>
+    <div id="modalBody"></div>
+    <div class="modalfoot" id="modalFoot"></div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICAÇÃO -->
+<div class="toast" id="toast"></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
