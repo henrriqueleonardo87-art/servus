@@ -189,42 +189,6 @@ export async function updatePerson(id, person) {
     }
   }
 
-
-  // Atualizar ou criar login no app_users
-  if (person.phone) {
-    const cleanPhone = String(person.phone).replace(/\D/g, '');
-    if (cleanPhone) {
-      // Buscar se já existe registro de usuário para esta pessoa
-      const { data: existingUser } = await supabase
-        .from('app_users')
-        .select('id')
-        .or(`person_id.eq.${id},phone.eq.${cleanPhone}`)
-        .maybeSingle();
-
-      const userFields = {
-        name: person.name,
-        phone: cleanPhone,
-        role: person.role || 'Voluntário',
-        email: person.email || null,
-        person_id: id
-      };
-      if (person.password) {
-        userFields.password = person.password;
-      }
-
-      if (existingUser) {
-        await supabase
-          .from('app_users')
-          .update(userFields)
-          .eq('id', existingUser.id);
-      } else if (person.password) {
-        await supabase
-          .from('app_users')
-          .insert([userFields]);
-      }
-    }
-  }
-
   return data;
 }
 
