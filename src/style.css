@@ -839,14 +839,25 @@ textarea:focus {
   padding: 24px;
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
   max-height: 90vh;
-  overflow: auto;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .modalhead {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+#modalBody {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
 }
 
 .formgrid {
@@ -892,7 +903,10 @@ textarea:focus {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 17px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
 }
 
 .empty {
@@ -2202,4 +2216,435 @@ textarea:focus {
 .btn-install-pwa:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   BACKDROP DA SIDEBAR (FECHAR AO TOCAR FORA NO CELULAR)
+   ========================================================================== */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+
+.sidebar-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   BARRA DE NAVEGAÇÃO INFERIOR PARA CELULAR (MOBILE BOTTOM NAV)
+   ========================================================================== */
+.bottom-nav {
+  display: none;
+}
+
+@media(max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    z-index: 80;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(12px);
+  }
+
+  [data-theme="dark"] .bottom-nav {
+    background: rgba(20, 21, 32, 0.95);
+    border-top-color: var(--line);
+    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.4);
+  }
+
+  .bottom-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.18s ease, transform 0.15s ease;
+    padding: 6px 2px;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bottom-nav-btn svg {
+    transition: transform 0.18s ease;
+    stroke: currentColor;
+  }
+
+  .bottom-nav-btn.active {
+    color: var(--accent);
+  }
+
+  .bottom-nav-btn.active svg {
+    transform: scale(1.12);
+  }
+}
+
+/* ==========================================================================
+   BANNER DE ATIVAÇÃO DE NOTIFICAÇÕES (DASHBOARD)
+   ========================================================================== */
+.notif-prompt-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(102, 87, 217, 0.12), rgba(140, 127, 240, 0.08));
+  border: 1px solid rgba(102, 87, 217, 0.35);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  animation: fadeIn 0.3s ease;
+}
+
+[data-theme="dark"] .notif-prompt-banner {
+  background: linear-gradient(135deg, rgba(135, 120, 245, 0.15), rgba(164, 151, 255, 0.08));
+  border-color: rgba(135, 120, 245, 0.4);
+}
+
+.notif-prompt-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.notif-prompt-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.notif-prompt-text b {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.notif-prompt-text small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+  display: block;
+}
+
+.notif-prompt-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   CARD DE CONTROLE DE NOTIFICAÇÕES NO MODAL
+   ========================================================================== */
+.notif-control-card {
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.notif-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.notif-status-badge.granted {
+  background: var(--greenbg);
+  color: var(--green);
+  border: 1px solid rgba(36, 155, 114, 0.3);
+}
+
+.notif-status-badge.default {
+  background: var(--amberbg);
+  color: var(--amber);
+  border: 1px solid rgba(183, 123, 39, 0.3);
+}
+
+.notif-status-badge.denied {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid rgba(185, 28, 28, 0.3);
+}
+
+[data-theme="dark"] .notif-status-badge.denied {
+  background: rgba(185, 28, 28, 0.2);
+  color: #f87171;
+}
+
+.notif-btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.ios-notif-tip {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(102, 87, 217, 0.08);
+  border: 1px dashed var(--accent);
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE COMPLETA PARA SMARTPHONES (MAX-WIDTH: 768px & 680px)
+   ========================================================================== */
+@media(max-width: 768px) {
+  /* Espaçamento inferior para a barra de navegação não tapar nada */
+  .main {
+    padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Impedir zoom indesejado no iOS Safari ao focar inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Topbar mais compacta no mobile */
+  .topbar {
+    padding: 6px 0;
+    gap: 8px;
+  }
+
+  .crumb {
+    font-size: 12px;
+    max-width: 140px;
+  }
+
+  /* Cabeçalhos com visual limpo */
+  .heading {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .heading h1 {
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  .heading .sub {
+    font-size: 12px;
+  }
+
+  /* Cards de estatísticas flexíveis no mobile */
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .stat {
+    padding: 12px !important;
+  }
+
+  .statnum {
+    font-size: 20px !important;
+  }
+
+  .stathead {
+    font-size: 10px !important;
+  }
+
+  /* Modais com altura perfeita e rolagem suave */
+  .modal {
+    width: 96vw !important;
+    max-height: 92dvh !important;
+    padding: 16px !important;
+    border-radius: 16px !important;
+    margin: auto;
+  }
+
+  .modalhead h2 {
+    font-size: 16px;
+  }
+
+  .modal-tabs {
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+
+  .modal-tab-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .avatar-uploader {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .avatar-btn-row {
+    justify-content: center;
+  }
+
+  .skill-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    max-height: 220px;
+  }
+
+  .modalfoot {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modalfoot .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* Banners responsivos */
+  .notif-prompt-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 14px;
+  }
+
+  .notif-prompt-actions {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .notif-prompt-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .scale-alert-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .scale-alert-banner button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Minha escala botões */
+  .btn-gcal, .btn-ics {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Transformação de tabelas em Cards Elegantes no Mobile */
+@media(max-width: 680px) {
+  .tablewrap {
+    overflow: visible;
+  }
+
+  .table {
+    min-width: 0 !important;
+    display: block;
+    width: 100%;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .table tr {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  }
+
+  [data-theme="dark"] .table tr {
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  }
+
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    border-bottom: none;
+    font-size: 13px;
+  }
+
+  .table td .actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+
+  .table td .actions button {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 8px;
+  }
+
+  /* Calendário mobile aprimorado */
+  .calcell {
+    min-height: 64px !important;
+    padding: 3px !important;
+  }
+
+  .cal-event {
+    padding: 3px 4px !important;
+    font-size: 8px !important;
+    border-radius: 4px !important;
+  }
+
+  .cal-assignees {
+    display: none !important;
+  }
 }

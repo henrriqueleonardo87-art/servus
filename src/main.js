@@ -156,7 +156,13 @@ export function navigate(pageId) {
   const targetPage = document.getElementById('page-' + pageId);
   if (targetPage) targetPage.classList.add('active');
 
+  // Atualizar navegação da Sidebar
   document.querySelectorAll('.nav button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === pageId);
+  });
+
+  // Atualizar navegação inferior mobile (Bottom Nav)
+  document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.page === pageId);
   });
 
@@ -169,7 +175,13 @@ export function navigate(pageId) {
     activities: 'Atividades'
   };
   document.getElementById('crumb').textContent = titles[pageId] || 'Workspace';
-  document.getElementById('sidebar').classList.remove('open');
+
+  // Fechar gaveta mobile e backdrop ao navegar
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebarBackdrop')?.classList.remove('show');
+
+  // Rolar suavemente ao topo no mobile ao trocar de aba
+  window.scrollTo({ top: 0, behavior: 'instant' });
 
   renderCurrentPage(pageId);
 }
@@ -243,6 +255,7 @@ async function loadDataFromSupabase() {
 // ==========================================
 function renderHome() {
   updateHomeGreeting();
+  updateHomeNotificationBanner();
   const now = new Date();
   const today = localISO(now);
   const todayScales = scales
@@ -394,6 +407,59 @@ function checkUserScaleAlerts() {
   }
 }
 
+function updateHomeNotificationBanner() {
+  const banner = document.getElementById('homeNotifPrompt');
+  if (!banner) return;
+
+  const isSupported = 'Notification' in window;
+  if (!isSupported) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  // Se já tiver permissão concedida, não precisa exibir banner de prompt na home
+  if (Notification.permission === 'granted') {
+    banner.style.display = 'none';
+    return;
+  }
+
+  // Se o usuário dispensou nesta sessão, não exibir
+  if (sessionStorage.getItem('servus_dismiss_notif_banner')) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  banner.style.display = 'flex';
+  banner.innerHTML = `
+    <div class="notif-prompt-content">
+      <div class="notif-prompt-icon">🔔</div>
+      <div class="notif-prompt-text">
+        <b>Ative as notificações no seu celular</b>
+        <small>Receba lembretes automáticos 1 dia antes e no dia das suas escalas na AD Bethânia.</small>
+      </div>
+    </div>
+    <div class="notif-prompt-actions">
+      <button class="btn primary mini" id="btnPromptEnableNotif" style="padding:7px 12px;font-size:11px;font-weight:700">Ativar Notificações</button>
+      <button class="btn secondary mini" id="btnPromptTestNotif" style="padding:7px 10px;font-size:11px">🧪 Testar</button>
+      <button class="mini" id="btnPromptDismissNotif" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px" title="Dispensar por enquanto">✕</button>
+    </div>
+  `;
+
+  document.getElementById('btnPromptEnableNotif').onclick = async () => {
+    await enableAllNotifications();
+    updateHomeNotificationBanner();
+  };
+
+  document.getElementById('btnPromptTestNotif').onclick = async () => {
+    await sendTestNotification();
+  };
+
+  document.getElementById('btnPromptDismissNotif').onclick = () => {
+    sessionStorage.setItem('servus_dismiss_notif_banner', 'true');
+    banner.style.display = 'none';
+  };
+}
+
 function openNotificationsModal() {
   const today = localISO(new Date());
   const userPersonId = currentUser?.personId;
@@ -411,14 +477,48 @@ function openNotificationsModal() {
     }
   });
 
-  let html = '';
+  const isNotifSupported = 'Notification' in window;
+  const perm = isNotifSupported ? Notification.permission : 'unsupported';
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+  let controlHtml = `
+    <div class="notif-control-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <b style="font-size:13px;color:var(--text)">Status das Notificações</b>
+        ${perm === 'granted'
+          ? '<span class="notif-status-badge granted">🟢 Ativadas no Aparelho</span>'
+          : perm === 'denied'
+          ? '<span class="notif-status-badge denied">🔴 Bloqueadas pelo Navegador</span>'
+          : '<span class="notif-status-badge default">🟡 Pendentes de Ativação</span>'}
+      </div>
+      <p class="muted small" style="margin:6px 0 10px;line-height:1.4">
+        ${perm === 'granted'
+          ? 'Tudo pronto! Seu dispositivo receberá lembretes automáticos 1 dia antes e no dia de cada programação.'
+          : perm === 'denied'
+          ? 'As notificações foram bloqueadas nas configurações deste navegador. Toque no ícone de cadeado/configurações da URL para permitir.'
+          : 'Ative as notificações para receber lembretes das suas escalas e avisos de substituições diretamente no seu telefone.'}
+      </p>
+      <div class="notif-btn-row">
+        ${perm !== 'granted' ? '<button class="btn primary mini" id="btnModalEnableNotif">🔔 Ativar Notificações</button>' : ''}
+        <button class="btn secondary mini" id="btnModalTestNotif">🧪 Enviar Notificação de Teste</button>
+      </div>
+      ${isIOS && !isStandalone ? `
+        <div class="ios-notif-tip">
+          <b>📱 Dica para iPhone (iOS):</b> Para receber notificações de escala no iOS, adicione o SERVUS à Tela de Início (toque em <b>Compartilhar 📤</b> no Safari > <b>"Adicionar à Tela de Início" ➕</b>) e abra o app instalado.
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  let scalesHtml = '';
   if (myUpcoming.length > 0) {
-    html += `<h3 style="margin:0 0 12px;font-size:14px;color:var(--text)">Suas Escalas Programadas</h3><div class="notif-list" style="display:flex;flex-direction:column;gap:10px">`;
-    html += myUpcoming.map(item => {
+    scalesHtml += `<h3 style="margin:16px 0 10px;font-size:13px;color:var(--text)">Suas Escalas Programadas</h3><div class="notif-list" style="display:flex;flex-direction:column;gap:10px">`;
+    scalesHtml += myUpcoming.map(item => {
       const isCancelled = item.status === 'cancelled';
       const isConfirmed = item.status === 'confirmed' || (item.confirmed && !isCancelled);
       return `
-        <div style="background:#f9f9fb;border:1px solid #e9ebef;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
           <div>
             <b>${item.activity}</b> · ${item.scale.title}
             <div class="muted small">${fmt(item.scale.date)} às ${item.scale.time}</div>
@@ -429,18 +529,34 @@ function openNotificationsModal() {
         </div>
       `;
     }).join('');
-    html += `</div>`;
+    scalesHtml += `</div>`;
   } else {
-    html += `<p class="muted">Você não possui escalas pendentes no momento.</p>`;
+    scalesHtml += `<p class="muted small" style="margin-top:12px">Você não possui escalas pendentes no momento. Quando a coordenação publicar uma escala com o seu nome, ela aparecerá aqui e você receberá uma notificação.</p>`;
   }
 
-  openModal('Notificações e Escalas', html, 'Ir para Minha Escala', () => {
+  openModal('Central de Notificações', controlHtml + scalesHtml, 'Ir para Minha Escala', () => {
     closeModal();
     if (currentUser?.personId) {
       selectedVolunteerId = currentUser.personId;
     }
     navigate('mine');
   });
+
+  const btnEnable = document.getElementById('btnModalEnableNotif');
+  if (btnEnable) {
+    btnEnable.onclick = async () => {
+      await enableAllNotifications();
+      openNotificationsModal();
+    };
+  }
+
+  const btnTest = document.getElementById('btnModalTestNotif');
+  if (btnTest) {
+    btnTest.onclick = async () => {
+      await sendTestNotification();
+      openNotificationsModal();
+    };
+  }
 }
 
 // ==========================================
@@ -1507,43 +1623,122 @@ async function deleteScaleAction(id) {
 // ==========================================
 // NOTIFICAÇÕES (LEMBRETES DE ESCALA & ANIVERSÁRIOS)
 // ==========================================
-function triggerBrowserNotification(title, body, tag = 'servus-notif') {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+export async function sendTestNotification() {
+  if (!('Notification' in window)) {
+    notify('Este dispositivo não suporta notificações de sistema.');
+    return false;
+  }
 
-  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.ready.then(reg => {
-      reg.showNotification(title, {
-        body,
-        icon: '/icon-192.svg',
-        badge: '/icon-192.svg',
-        tag,
-        renotify: true,
-        data: { url: '/' }
-      });
-    }).catch(() => {
-      new Notification(title, { body, icon: '/icon-192.svg', tag });
-    });
-  } else {
-    try {
-      new Notification(title, { body, icon: '/icon-192.svg', tag });
-    } catch (e) {
-      console.warn('Erro ao disparar notificação:', e);
+  if (Notification.permission !== 'granted') {
+    const res = await Notification.requestPermission();
+    if (res !== 'granted') {
+      notify('Permissão de notificação não concedida.');
+      updateHomeNotificationBanner();
+      return false;
     }
   }
+
+  try {
+    const ok = await triggerBrowserNotification(
+      '🔔 Teste SERVUS: Notificações Ativas!',
+      'Parabéns! Seu celular está configurado para receber os lembretes de escalas da AD Bethânia.',
+      'test-notif-' + Date.now()
+    );
+
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+    }
+
+    notify('Notificação de teste enviada! Confira a barra do seu celular.');
+    updateHomeNotificationBanner();
+    return ok;
+  } catch (err) {
+    console.error('Erro ao enviar teste de notificação:', err);
+    notify('Erro ao enviar notificação: ' + err.message);
+    return false;
+  }
+}
+
+export async function triggerBrowserNotification(title, body, tag = 'servus-notif', extra = {}) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    return false;
+  }
+
+  const options = {
+    body,
+    icon: '/icon-192.svg',
+    badge: '/icon-192.svg',
+    tag,
+    renotify: true,
+    vibrate: [200, 100, 200],
+    data: { url: '/', timestamp: Date.now() },
+    ...extra
+  };
+
+  // 1. Tentar via Service Worker Registration (padrão obrigatório no Android Chrome e iOS PWA)
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg && reg.showNotification) {
+        await reg.showNotification(title, options);
+        return true;
+      }
+    } catch (e) {
+      console.warn('Erro ao disparar via navigator.serviceWorker.ready:', e);
+    }
+  }
+
+  // 2. Tentar via postMessage ao controller do Service Worker
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    try {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        title,
+        options
+      });
+      return true;
+    } catch (e) {
+      console.warn('Erro ao enviar postMessage para controller:', e);
+    }
+  }
+
+  // 3. Fallback para Notification construtor (Desktop Chrome/Firefox/Safari)
+  try {
+    const notif = new Notification(title, options);
+    notif.onclick = () => {
+      window.focus();
+      notif.close();
+    };
+    return true;
+  } catch (e) {
+    console.warn('Erro no fallback new Notification:', e);
+  }
+
+  return false;
 }
 
 async function enableAllNotifications() {
   if (!('Notification' in window)) {
-    notify('Este dispositivo não suporta notificações.');
+    notify('Este dispositivo não suporta notificações de sistema.');
     return;
   }
-  const perm = await Notification.requestPermission();
-  if (perm === 'granted') {
-    notify('Notificações ativadas! Você receberá lembretes 1 dia antes e no dia das escalas.');
-    checkScaleNotifications();
-    checkBirthdayNotifications();
-  } else {
-    notify('Permissão de notificação não concedida.');
+
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      notify('Notificações ativadas com sucesso!');
+      await sendTestNotification();
+      checkScaleNotifications();
+      checkBirthdayNotifications();
+    } else if (perm === 'denied') {
+      notify('Notificações bloqueadas nas configurações do navegador.');
+    } else {
+      notify('Permissão não concedida.');
+    }
+    updateHomeNotificationBanner();
+  } catch (e) {
+    console.error('Erro ao pedir permissão de notificação:', e);
+    notify('Erro ao ativar notificações: ' + e.message);
   }
 }
 
@@ -1632,13 +1827,19 @@ window.addEventListener('beforeinstallprompt', e => {
 
 function initPwa() {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    const registerSw = () => {
       navigator.serviceWorker.register('/sw.js').then(reg => {
-        console.log('SERVUS Service Worker ativo:', reg.scope);
+        console.log('SERVUS Service Worker registrado com sucesso:', reg.scope);
       }).catch(err => {
-        console.log('SW registration note:', err);
+        console.warn('SW registration note:', err);
       });
-    });
+    };
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      registerSw();
+    } else {
+      window.addEventListener('DOMContentLoaded', registerSw);
+    }
   }
 
   const btn = document.getElementById('btnInstallPwa');
@@ -1664,7 +1865,7 @@ function initPwa() {
               <div style="font-size:48px;margin-bottom:12px">📲</div>
               <h3 style="font-size:16px;margin-bottom:8px">Adicione à tela inicial</h3>
               <p class="muted" style="font-size:13px;line-height:1.5;margin-bottom:16px">
-                Instale o SERVUS como aplicativo no seu telefone para acesso rápido e receber notificações!
+                Instale o SERVUS como aplicativo no seu telefone para acesso rápido em tela cheia e receber notificações de escalas!
               </p>
               <div style="background:var(--surface2);padding:14px;border-radius:12px;text-align:left;font-size:12px;line-height:1.6">
                 <b>No iPhone (Safari):</b><br>
@@ -1913,16 +2114,34 @@ function initEvents() {
     btn.addEventListener('click', () => navigate(btn.dataset.page));
   });
 
-  // Mobile menu toggle
-  document.getElementById('btnToggleMenu').onclick = () => {
-    document.getElementById('sidebar').classList.toggle('open');
+  // Navegação Inferior Mobile (Bottom Nav)
+  document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => navigate(btn.dataset.page));
+  });
+
+  // Mobile menu toggle e Backdrop
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+
+  const closeSidebarMobile = () => {
+    sidebar?.classList.remove('open');
+    backdrop?.classList.remove('show');
   };
 
+  const btnToggle = document.getElementById('btnToggleMenu');
+  if (btnToggle) {
+    btnToggle.onclick = () => {
+      const isOpen = sidebar.classList.toggle('open');
+      backdrop?.classList.toggle('show', isOpen);
+    };
+  }
+
+  if (backdrop) {
+    backdrop.onclick = closeSidebarMobile;
+  }
+
   // Botões do Topo (Notificações e Avisos)
-  document.getElementById('btnTopBell').onclick = async () => {
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      await Notification.requestPermission();
-    }
+  document.getElementById('btnTopBell').onclick = () => {
     openNotificationsModal();
   };
 
@@ -1975,6 +2194,19 @@ function initEvents() {
   document.getElementById('modalback').onclick = (e) => {
     if (e.target === document.getElementById('modalback')) closeModal();
   };
+
+  // Monitorar foco da janela para checar notificações
+  window.addEventListener('focus', () => {
+    checkScaleNotifications();
+    checkBirthdayNotifications();
+    updateHomeNotificationBanner();
+  });
+
+  // Checagem periódica a cada 20 minutos
+  setInterval(() => {
+    checkScaleNotifications();
+    checkBirthdayNotifications();
+  }, 20 * 60 * 1000);
 
   // Iniciar Realtime Listener
   api.subscribeToRealtime(() => {
