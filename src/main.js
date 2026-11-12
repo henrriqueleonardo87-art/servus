@@ -1666,8 +1666,8 @@ export async function triggerBrowserNotification(title, body, tag = 'servus-noti
 
   const options = {
     body,
-    icon: '/icon-192.svg',
-    badge: '/icon-192.svg',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
     tag,
     renotify: true,
     vibrate: [200, 100, 200],
@@ -1862,7 +1862,7 @@ function initPwa() {
           'Salvar SERVUS no Celular',
           `
             <div style="text-align:center;padding:12px 6px">
-              <div style="font-size:48px;margin-bottom:12px">📲</div>
+              <img src="/icon-192.png" alt="SERVUS" style="width:64px;height:64px;border-radius:18px;margin-bottom:12px;box-shadow:0 8px 24px rgba(99,85,216,0.35);display:inline-block">
               <h3 style="font-size:16px;margin-bottom:8px">Adicione à tela inicial</h3>
               <p class="muted" style="font-size:13px;line-height:1.5;margin-bottom:16px">
                 Instale o SERVUS como aplicativo no seu telefone para acesso rápido em tela cheia e receber notificações de escalas!

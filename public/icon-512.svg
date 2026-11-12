@@ -1,11 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="grad512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#7366f0"/>
+    <linearGradient id="servusBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9d8df8"/>
+      <stop offset="45%" stop-color="#735fd9"/>
       <stop offset="100%" stop-color="#4d3ec2"/>
     </linearGradient>
+    <linearGradient id="innerShine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10.24" stdDeviation="12.8" flood-color="#1e135e" flood-opacity="0.45"/>
+    </filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#grad512)"/>
-  <path d="M149 153.6c25.6-23.5 59.7-36.3 102.4-36.3 59.7 0 100.3 25.6 100.3 68.3 0 96-189.9 44.8-189.9 138.7 0 42.7 40.5 70.4 102.4 70.4 42.7 0 78.9-12.8 104.5-38.4" stroke="#ffffff" stroke-width="44.8" stroke-linecap="round" fill="none"/>
-</svg>
 
+  <!-- Fundo Squircle com gradiente nobre SERVUS -->
+  <rect width="512" height="512" rx="113" fill="url(#servusBg)"/>
+  <rect width="512" height="512" rx="113" fill="url(#innerShine)"/>
+  <rect x="1" y="1" width="510" height="510" rx="113" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.56"/>
+
+  <!-- Emblema Oficial S com sombra refinada -->
+  <g filter="url(#shadow)">
+    <path d="M 149.3 153.6 C 174.9 130.1, 209.1 117.3, 251.7 117.3 C 311.5 117.3, 352.0 142.9, 352.0 185.6 C 352.0 281.6, 162.1 230.4, 162.1 324.3 C 162.1 366.9, 202.7 394.7, 264.5 394.7 C 307.2 394.7, 343.5 381.9, 369.1 356.3"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="46.9"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,5 +1,5 @@
 // SERVUS Service Worker
-const CACHE_NAME = 'servus-v1';
+const CACHE_NAME = 'servus-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -8,8 +8,13 @@ const ASSETS_TO_CACHE = [
   '/src/api.js',
   '/src/supabase.js',
   '/manifest.json',
+  '/favicon.svg',
+  '/favicon.png',
+  '/icon-192.png',
+  '/icon-512.png',
   '/icon-192.svg',
-  '/icon-512.svg'
+  '/icon-512.svg',
+  '/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', event => {
