@@ -1,5 +1,5 @@
 // SERVUS Service Worker
-const CACHE_NAME = 'servus-v2';
+const CACHE_NAME = 'servus-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -93,8 +93,11 @@ self.addEventListener('periodicsync', event => {
   }
 });
 
-// Message handler for triggering notifications from client
+// Message handler for triggering notifications or skip-waiting from client
 self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const { title, options } = event.data;
     self.registration.showNotification(title, options);

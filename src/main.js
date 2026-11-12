@@ -10,6 +10,25 @@ let month = new Date();
 month.setDate(1);
 let scaleTab = 'all';
 let currentUser = null;
+let pendingUpdatesCount = 0;
+let swRegistration = null;
+
+function setPendingUpdates(count) {
+  pendingUpdatesCount = Math.max(0, count);
+  const badge = document.getElementById('refreshBadge');
+  if (badge) {
+    if (pendingUpdatesCount > 0) {
+      badge.textContent = pendingUpdatesCount > 9 ? '9+' : String(pendingUpdatesCount);
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+function incrementPendingUpdates() {
+  setPendingUpdates(pendingUpdatesCount + 1);
+}
 
 // Configuração do WhatsApp do responsável (Welson)
 const WELSON_PHONE = '5531975284359';
@@ -2011,6 +2030,25 @@ function initPwa() {
     const registerSw = () => {
       navigator.serviceWorker.register('/sw.js').then(async reg => {
         console.log('SERVUS Service Worker registrado com sucesso:', reg.scope);
+        swRegistration = reg;
+
+        // Detectar novas atualizações do código / assets
+        reg.onupdatefound = () => {
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                incrementPendingUpdates();
+                notify('Nova versão disponível! Toque em Atualizar.');
+              }
+            };
+          }
+        };
+
+        if (reg.waiting) {
+          incrementPendingUpdates();
+        }
+
         if ('periodicSync' in reg) {
           try {
             await reg.periodicSync.register('check-scales-sync', {
@@ -2332,32 +2370,68 @@ function initEvents() {
     backdrop.onclick = closeSidebarMobile;
   }
 
-  // Botões de Atualizar Página e Dados (Topo e Home)
+  // Botões de Atualizar Página e Dados (Topo)
   let lastRefreshClickTime = 0;
   const triggerPageRefresh = async () => {
     const now = Date.now();
+    const overlay = document.getElementById('updatingOverlay');
+    const msgEl = document.getElementById('updatingMsg');
     const allIcons = document.querySelectorAll('.btn-refresh-screen svg');
+
     allIcons.forEach(svg => svg.classList.add('spin-refresh'));
+    if (overlay) overlay.style.display = 'grid';
+    if (msgEl) msgEl.textContent = 'Sincronizando todas as informações com o sistema...';
 
     // Se der dois toques rápidos (menos de 1.2s), faz recarregamento completo do navegador
     if (now - lastRefreshClickTime < 1200) {
-      notify('Recarregando página...');
+      if (msgEl) msgEl.textContent = 'Recarregando aplicação completa...';
       setTimeout(() => window.location.reload(), 250);
       return;
     }
     lastRefreshClickTime = now;
 
+    const startTime = Date.now();
+
     try {
-      notify('Atualizando dados...');
+      // 1. Se houver nova versão de Service Worker esperando, ativar e recarregar
+      if (swRegistration && swRegistration.waiting) {
+        if (msgEl) msgEl.textContent = 'Instalando nova versão do aplicativo...';
+        swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        setTimeout(() => {
+          window.location.reload();
+        }, 700);
+        return;
+      }
+
+      // 2. Se o navegador suporta service worker, checar se há atualização
+      if (swRegistration && swRegistration.update) {
+        try {
+          await swRegistration.update();
+        } catch (e) {}
+      }
+
+      // 3. Forçar recarregamento completo dos dados do Supabase
       await loadDataFromSupabase();
-      notify('Página e dados atualizados com sucesso!');
+
+      // 4. Limpar contador de atualizações pendentes
+      setPendingUpdates(0);
+
+      // Tempo mínimo para a animação da tela de atualização ser visível (700ms)
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 700) {
+        await new Promise(r => setTimeout(r, 700 - elapsed));
+      }
+
+      notify('SERVUS atualizado com sucesso!');
     } catch (err) {
       console.warn('Erro ao sincronizar, recarregando navegador:', err);
       window.location.reload();
+      return;
     } finally {
+      if (overlay) overlay.style.display = 'none';
       setTimeout(() => {
         allIcons.forEach(svg => svg.classList.remove('spin-refresh'));
-      }, 700);
+      }, 500);
     }
   };
 
@@ -2447,8 +2521,9 @@ function initEvents() {
   }, 20 * 60 * 1000);
 
   // Iniciar Realtime Listener
-  api.subscribeToRealtime(() => {
-    console.log('Realtime change detectado no Supabase. Atualizando tela...');
+  api.subscribeToRealtime((payload) => {
+    console.log('Realtime change detectado no Supabase:', payload);
+    incrementPendingUpdates();
     loadDataFromSupabase();
   });
 }
