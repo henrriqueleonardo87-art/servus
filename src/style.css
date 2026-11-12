@@ -939,12 +939,15 @@ textarea:focus {
 }
 
 .myhero:after {
-  content: '✳';
+  content: "";
   position: absolute;
-  right: 40px;
-  top: -45px;
-  font-size: 180px;
-  color: #ffffff0b;
+  right: -30px;
+  top: -30px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+  pointer-events: none;
 }
 
 .myhero .eyebrow {
@@ -2664,10 +2667,48 @@ textarea:focus {
     justify-content: center;
   }
 
-  /* Minha escala botões */
+  /* Minha escala botões e layout mobile */
   .btn-gcal, .btn-ics {
     padding: 8px 12px;
     font-size: 12px;
+  }
+
+  #page-mine .heading {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  #page-mine .heading > div:last-child {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  #mineVolunteerSelect {
+    flex: 1;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  .myhero {
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .myhero:after {
+    display: none !important;
+  }
+
+  .myhero h2 {
+    font-size: 18px !important;
+    margin: 4px 0 6px !important;
+  }
+
+  .myhero p {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
   }
 }
 
