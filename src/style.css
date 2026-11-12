@@ -2290,39 +2290,70 @@ textarea:focus {
 }
 
 /* ==========================================================================
-   BARRA DE NAVEGAÇÃO INFERIOR PARA CELULAR (MOBILE BOTTOM NAV - ELITE DESIGN)
+   BARRA DE NAVEGAÇÃO INFERIOR PARA CELULAR (MAGIC FLOATING ISLAND DOCK)
    ========================================================================== */
 .bottom-nav {
   display: none;
 }
 
 @media(max-width: 768px) {
+  /* Halo de Luz Ambiente e Levitação */
   .bottom-nav {
     display: flex;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: calc(64px + env(safe-area-inset-bottom, 0px));
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)) 4px;
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(24px) saturate(190%);
-    -webkit-backdrop-filter: blur(24px) saturate(190%);
-    border-top: 1px solid rgba(102, 87, 217, 0.12);
-    z-index: 95;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    left: 14px;
+    right: 14px;
+    max-width: 440px;
+    margin: 0 auto;
+    height: 64px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(30px) saturate(210%);
+    -webkit-backdrop-filter: blur(30px) saturate(210%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 9999px;
+    z-index: 100;
     justify-content: space-around;
     align-items: center;
-    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06), 0 -1px 2px rgba(102, 87, 217, 0.03);
+    box-shadow: 
+      0 18px 40px -6px rgba(99, 102, 241, 0.32),
+      0 6px 18px rgba(15, 23, 42, 0.08),
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.95),
+      inset 0 -1px 1px rgba(99, 102, 241, 0.12);
     box-sizing: border-box;
-    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .bottom-nav::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(236, 72, 153, 0.3), rgba(59, 130, 246, 0.35));
+    z-index: -1;
+    filter: blur(14px);
+    opacity: 0.6;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
   }
 
   [data-theme="dark"] .bottom-nav {
-    background: rgba(18, 20, 32, 0.90);
-    backdrop-filter: blur(24px) saturate(190%);
-    -webkit-backdrop-filter: blur(24px) saturate(190%);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6), 0 -1px 0 rgba(255, 255, 255, 0.04);
+    background: rgba(18, 19, 32, 0.84);
+    backdrop-filter: blur(32px) saturate(220%);
+    -webkit-backdrop-filter: blur(32px) saturate(220%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 
+      0 20px 48px -8px rgba(0, 0, 0, 0.8),
+      0 0 32px rgba(139, 92, 246, 0.32),
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.22),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+  }
+
+  [data-theme="dark"] .bottom-nav::before {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.45), rgba(217, 70, 239, 0.35), rgba(99, 102, 241, 0.4));
+    opacity: 0.75;
+    filter: blur(16px);
   }
 
   .bottom-nav-btn {
@@ -2341,8 +2372,9 @@ textarea:focus {
     padding: 2px 2px 0;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), color 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
+    border-radius: 999px;
   }
 
   .bottom-nav-btn * {
@@ -2350,71 +2382,76 @@ textarea:focus {
   }
 
   .bottom-nav-btn:active {
-    transform: scale(0.92);
+    transform: scale(0.86);
   }
 
   .bnav-icon {
-    width: 38px;
-    height: 26px;
-    border-radius: 13px;
+    width: 44px;
+    height: 28px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     color: inherit;
     position: relative;
   }
 
   .bnav-icon svg {
-    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.25s ease;
     stroke: currentColor;
     display: block;
   }
 
   .bottom-nav-btn span {
-    font-size: 10px;
-    font-weight: 500;
+    font-size: 9.5px;
+    font-weight: 600;
     letter-spacing: -0.15px;
-    line-height: 1.1;
+    line-height: 1;
     color: var(--muted);
-    transition: color 0.2s ease, font-weight 0.2s ease, transform 0.2s ease;
+    transition: color 0.25s ease, font-weight 0.25s ease, transform 0.25s ease;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+    margin-top: 1px;
   }
 
   .bnav-dot {
     width: 4px;
     height: 4px;
-    border-radius: 2px;
-    background: var(--accent);
-    box-shadow: 0 0 6px rgba(102, 87, 217, 0.9);
-    margin-top: 1px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+    box-shadow: 0 0 8px #8b5cf6, 0 0 14px rgba(236, 72, 153, 0.9);
+    margin-top: 0px;
     transform: scale(0);
     opacity: 0;
-    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  /* Estado ATIVO */
-  .bottom-nav-btn.active {
-    color: var(--accent);
-  }
-
+  /* ESTADO ATIVO: CÁPSULA RADIANTE COM MAGIA PURA */
   .bottom-nav-btn.active .bnav-icon {
-    background: linear-gradient(135deg, rgba(102, 87, 217, 0.16), rgba(124, 107, 242, 0.08));
-    color: var(--accent);
-    box-shadow: 0 2px 8px rgba(102, 87, 217, 0.18), inset 0 0 0 1px rgba(102, 87, 217, 0.16);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
+    color: #ffffff !important;
+    box-shadow: 
+      0 5px 16px rgba(139, 92, 246, 0.55),
+      0 2px 6px rgba(0, 0, 0, 0.15),
+      inset 0 1px 1px rgba(255, 255, 255, 0.65);
+    transform: translateY(-2px);
+    animation: magicDockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .bottom-nav-btn.active .bnav-icon svg {
-    transform: scale(1.08);
+    stroke: #ffffff !important;
+    transform: scale(1.1);
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
   }
 
   .bottom-nav-btn.active span {
-    color: var(--accent);
-    font-weight: 700;
-    transform: scale(1.02);
+    color: #6366f1;
+    font-weight: 800;
+    transform: translateY(-1px);
+    letter-spacing: 0px;
   }
 
   .bottom-nav-btn.active .bnav-dot {
@@ -2422,24 +2459,24 @@ textarea:focus {
     opacity: 1;
   }
 
-  /* Dark Theme para Estado Ativo */
-  [data-theme="dark"] .bottom-nav-btn.active {
-    color: #c4b5fd;
-  }
-
+  /* Tema Escuro para Estado Ativo */
   [data-theme="dark"] .bottom-nav-btn.active .bnav-icon {
-    background: linear-gradient(135deg, rgba(135, 120, 245, 0.24), rgba(102, 87, 217, 0.14));
-    color: #c4b5fd;
-    box-shadow: 0 2px 10px rgba(102, 87, 217, 0.35), inset 0 0 0 1px rgba(135, 120, 245, 0.3);
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 45%, #f43f5e 100%);
+    box-shadow: 
+      0 6px 20px rgba(168, 85, 247, 0.65),
+      0 0 14px rgba(244, 63, 94, 0.4),
+      inset 0 1px 1px rgba(255, 255, 255, 0.7);
   }
 
   [data-theme="dark"] .bottom-nav-btn.active span {
-    color: #d8cfff;
+    color: #f3e8ff;
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.7);
   }
 
-  [data-theme="dark"] .bottom-nav-btn.active .bnav-dot {
-    background: #a78bfa;
-    box-shadow: 0 0 7px rgba(167, 139, 250, 0.95);
+  @keyframes magicDockPop {
+    0% { transform: scale(0.8) translateY(0); }
+    50% { transform: scale(1.15) translateY(-4px); }
+    100% { transform: scale(1) translateY(-2px); }
   }
 }
 
@@ -2571,9 +2608,9 @@ textarea:focus {
    RESPONSIVIDADE COMPLETA PARA SMARTPHONES (MAX-WIDTH: 768px & 680px)
    ========================================================================== */
 @media(max-width: 768px) {
-  /* Espaçamento inferior para a barra de navegação não tapar nada */
+  /* Espaçamento inferior para a barra de navegação flutuante não tapar nada */
   .main {
-    padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(105px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   /* Impedir zoom indesejado no iOS Safari ao focar inputs */
