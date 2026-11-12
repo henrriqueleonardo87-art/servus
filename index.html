@@ -182,7 +182,7 @@
 
       <div class="heading">
         <div>
-          <div class="eyebrow">Assembleia de Deus Regional Bethania · <span id="homeDate"></span></div>
+          <div class="eyebrow"><span class="eyebrow-org">Assembleia de Deus Regional Bethania</span><span class="eyebrow-sep"> · </span><span id="homeDate"></span></div>
           <h1 id="homeGreeting">Bom dia! Vamos servir?</h1>
           <div class="sub">Tudo organizado para que cada pessoa saiba onde e como contribuir.</div>
         </div>
@@ -225,7 +225,7 @@
             <div id="todayRoster"></div>
             <div id="upcoming"></div>
           </div>
-          <div class="panel">
+          <div class="panel panel-panorama">
             <div class="panelhead">
               <h2>Panorama da equipe</h2>
               <span class="pill purple">Este mês</span>
@@ -422,11 +422,16 @@
         <button class="btn primary" id="btnNewPerson">＋ Adicionar pessoa</button>
       </div>
       <div class="panel">
-        <div class="panelhead">
-          <input class="search" id="peopleSearch" placeholder="Buscar por nome ou atividade...">
-          <span class="muted small" id="peopleCount">0 pessoas</span>
+        <div class="panelhead people-panelhead">
+          <div class="people-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" class="search-ico" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input class="search people-search-input" id="peopleSearch" placeholder="Buscar por nome ou atividade...">
+          </div>
+          <span class="people-count-pill" id="peopleCount">0 voluntários</span>
         </div>
-        <div class="tablewrap">
+
+        <!-- VISUALIZAÇÃO DESKTOP: TABELA -->
+        <div class="tablewrap desktop-only-table">
           <table class="table">
             <thead>
               <tr>
@@ -441,6 +446,9 @@
             <tbody id="peopleRows"></tbody>
           </table>
         </div>
+
+        <!-- VISUALIZAÇÃO CELULAR: CARDS ESTRUTURADOS -->
+        <div class="mobile-team-cards mobile-only-view" id="peopleCardsMobile"></div>
       </div>
       <div class="panel">
         <div class="panelhead">

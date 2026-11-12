@@ -1,4 +1,4 @@
-﻿Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Drawing
 
 function Create-ServusIcon {
     param (
@@ -113,3 +113,4 @@ Create-ServusIcon -Size 512 -OutPath "$dir\icon-512.png"
 Create-ServusIcon -Size 192 -OutPath "$dir\icon-192.png"
 Create-ServusIcon -Size 180 -OutPath "$dir\apple-touch-icon.png"
 Create-ServusIcon -Size 32 -OutPath "$dir\favicon.png"
+

@@ -95,3 +95,4 @@ fs.writeFileSync(path.join(publicDir, 'icon-192.svg'), svg192);
 fs.writeFileSync(path.join(publicDir, 'favicon.svg'), svgFavicon);
 
 console.log('SVGs gerados com sucesso em', publicDir);
+

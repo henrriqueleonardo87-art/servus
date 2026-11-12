@@ -895,52 +895,137 @@ function renderPeople() {
     return (p.name + ' ' + (p.area || '') + ' ' + skillsText + ' ' + emailText).toLowerCase().includes(q);
   });
 
-  document.getElementById('peopleCount').textContent = filtered.length + ' pessoas';
+  const countEl = document.getElementById('peopleCount');
+  if (countEl) {
+    countEl.textContent = `${filtered.length} voluntário${filtered.length === 1 ? '' : 's'}`;
+  }
 
+  // 1. Renderizar tabela de desktop
   const tbody = document.getElementById('peopleRows');
-  if (!tbody) return;
-
-  tbody.innerHTML = filtered.map(p => `
-    <tr>
-      <td>
-        <div class="person">
-          <div class="avatar" style="${p.avatarUrl ? `background-image:url('${p.avatarUrl}');background-size:cover;background-position:center;color:transparent;` : ''}">
-            ${p.avatarUrl ? '' : p.initials}
+  if (tbody) {
+    tbody.innerHTML = filtered.map(p => `
+      <tr>
+        <td>
+          <div class="person">
+            <div class="avatar" style="${p.avatarUrl ? `background-image:url('${p.avatarUrl}');background-size:cover;background-position:center;color:transparent;` : ''}">
+              ${p.avatarUrl ? '' : p.initials}
+            </div>
+            <div>
+              <b>${p.name}</b>
+              ${p.email ? `<small style="display:block;font-size:11px;color:var(--muted)">${p.email}</small>` : ''}
+            </div>
           </div>
-          <div>
-            <b>${p.name}</b>
-            ${p.email ? `<small style="display:block;font-size:11px;color:var(--muted)">${p.email}</small>` : ''}
+        </td>
+        <td>${p.phone || '—'}</td>
+        <td>
+          ${(p.skills || (p.area ? [p.area] : [])).map(s => `
+            <span class="pill purple" style="display:inline-block;margin:2px">${s}</span>
+          `).join('') || '<span class="muted">Não informado</span>'}
+        </td>
+        <td>
+          <span class="pill ${p.availability === 'Disponível' ? '' : 'pending'}">${p.availability}</span>
+          ${p.unavailableFrom ? `
+            <div class="muted small">Ausente: ${fmt(p.unavailableFrom)}${p.unavailableTo && p.unavailableTo !== p.unavailableFrom ? ' a ' + fmt(p.unavailableTo) : ''}</div>
+          ` : ''}
+        </td>
+        <td>${p.birthday ? fmt(p.birthday) : '—'}</td>
+        <td>
+          <div class="actions">
+            <button class="mini btn-edit-person" data-id="${p.id}">Editar</button>
+            <button class="mini btn-delete-person" data-id="${p.id}">✕</button>
           </div>
-        </div>
-      </td>
-      <td>${p.phone || '—'}</td>
-      <td>
-        ${(p.skills || (p.area ? [p.area] : [])).map(s => `
-          <span class="pill purple" style="display:inline-block;margin:2px">${s}</span>
-        `).join('') || '<span class="muted">Não informado</span>'}
-      </td>
-      <td>
-        <span class="pill ${p.availability === 'Disponível' ? '' : 'pending'}">${p.availability}</span>
-        ${p.unavailableFrom ? `
-          <div class="muted small">Ausente: ${fmt(p.unavailableFrom)}${p.unavailableTo && p.unavailableTo !== p.unavailableFrom ? ' a ' + fmt(p.unavailableTo) : ''}</div>
-        ` : ''}
-      </td>
-      <td>${p.birthday ? fmt(p.birthday) : '—'}</td>
-      <td>
-        <div class="actions">
-          <button class="mini btn-edit-person" data-id="${p.id}">Editar</button>
-          <button class="mini btn-delete-person" data-id="${p.id}">✕</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+        </td>
+      </tr>
+    `).join('');
 
-  tbody.querySelectorAll('.btn-edit-person').forEach(b => {
-    b.onclick = () => openPersonModal(Number(b.dataset.id));
-  });
-  tbody.querySelectorAll('.btn-delete-person').forEach(b => {
-    b.onclick = () => deletePersonAction(Number(b.dataset.id));
-  });
+    tbody.querySelectorAll('.btn-edit-person').forEach(b => {
+      b.onclick = () => openPersonModal(Number(b.dataset.id));
+    });
+    tbody.querySelectorAll('.btn-delete-person').forEach(b => {
+      b.onclick = () => deletePersonAction(Number(b.dataset.id));
+    });
+  }
+
+  // 2. Renderizar cards estruturados e elegantes para celular
+  const mobileWrap = document.getElementById('peopleCardsMobile');
+  if (mobileWrap) {
+    if (!filtered.length) {
+      mobileWrap.innerHTML = '<div class="empty" style="padding:24px 0;text-align:center">Nenhum voluntário encontrado.</div>';
+    } else {
+      mobileWrap.innerHTML = filtered.map(p => {
+        const cleanPhone = (p.phone || '').replace(/\D/g, '');
+        const waUrl = cleanPhone ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent('Olá ' + p.name + '!')}` : '';
+        const skillsList = p.skills || (p.area ? [p.area] : []);
+        const isAvail = p.availability === 'Disponível';
+
+        return `
+          <div class="team-card">
+            <div class="team-card-top">
+              <div class="team-card-person">
+                <div class="team-card-avatar" style="${p.avatarUrl ? `background-image:url('${p.avatarUrl}');background-size:cover;background-position:center;color:transparent;` : ''}">
+                  ${p.avatarUrl ? '' : p.initials}
+                </div>
+                <div class="team-card-id">
+                  <strong class="team-card-name">${p.name}</strong>
+                  ${p.email ? `<span class="team-card-email">${p.email}</span>` : ''}
+                </div>
+              </div>
+              <span class="team-avail-pill ${isAvail ? 'available' : 'absent'}">
+                ${isAvail ? '🟢 Disponível' : '🔴 ' + p.availability}
+              </span>
+            </div>
+
+            ${p.unavailableFrom ? `
+              <div class="team-card-absent-notice">
+                Ausente: ${fmt(p.unavailableFrom)}${p.unavailableTo && p.unavailableTo !== p.unavailableFrom ? ' a ' + fmt(p.unavailableTo) : ''}
+                ${p.unavailableReason ? `· <i>${p.unavailableReason}</i>` : ''}
+              </div>
+            ` : ''}
+
+            <div class="team-card-meta">
+              ${p.phone ? `
+                <a href="tel:${cleanPhone}" class="team-meta-phone">
+                  📞 ${p.phone}
+                </a>
+                ${waUrl ? `
+                  <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="team-meta-wa" title="Conversar no WhatsApp">
+                    💬 WhatsApp
+                  </a>
+                ` : ''}
+              ` : ''}
+              ${p.birthday ? `
+                <span class="team-meta-bday">
+                  🎂 ${fmt(p.birthday)}
+                </span>
+              ` : ''}
+            </div>
+
+            ${skillsList.length ? `
+              <div class="team-card-skills">
+                ${skillsList.map(s => `<span class="team-skill-chip">${s}</span>`).join('')}
+              </div>
+            ` : ''}
+
+            <div class="team-card-actions">
+              <button class="btn-edit btn-edit-person" data-id="${p.id}">
+                ✏️ Editar dados
+              </button>
+              <button class="btn-delete btn-delete-person" data-id="${p.id}">
+                🗑️ Excluir
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      mobileWrap.querySelectorAll('.btn-edit-person').forEach(b => {
+        b.onclick = () => openPersonModal(Number(b.dataset.id));
+      });
+      mobileWrap.querySelectorAll('.btn-delete-person').forEach(b => {
+        b.onclick = () => deletePersonAction(Number(b.dataset.id));
+      });
+    }
+  }
 
   // Lista de Próximos Aniversários
   renderBirthdays();

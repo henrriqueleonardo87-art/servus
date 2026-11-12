@@ -2451,44 +2451,140 @@ textarea:focus {
   .topbar {
     padding: 6px 0;
     gap: 8px;
+    margin-bottom: 14px;
   }
 
   .crumb {
-    font-size: 12px;
+    font-size: 11px;
     max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* Cabeçalhos com visual limpo */
+  /* Cabeçalhos com visual limpo e compacto no mobile */
   .heading {
-    gap: 12px;
-    margin-bottom: 18px;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .eyebrow {
+    font-size: 11px !important;
+    margin-bottom: 2px !important;
+    letter-spacing: 0.5px !important;
+    color: var(--accent) !important;
+    font-weight: 700 !important;
+  }
+
+  .eyebrow-org,
+  .eyebrow-sep {
+    display: none !important;
   }
 
   .heading h1 {
-    font-size: 22px;
-    line-height: 1.2;
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+    font-weight: 800 !important;
   }
 
+  /* Ocultar subtítulo genérico no celular para liberar espaço */
   .heading .sub {
-    font-size: 12px;
+    display: none !important;
   }
 
-  /* Cards de estatísticas flexíveis no mobile */
+  #btnHomeNewScale,
+  #btnNewPerson,
+  #btnNewScale {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    min-height: 38px !important;
+    border-radius: 9px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
+  }
+
+  /* Cards de estatísticas horizontais, compactos e limpos no mobile */
   .cards {
+    display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
   }
 
   .stat {
-    padding: 12px !important;
+    padding: 9px 12px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    min-height: 48px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+  }
+
+  .stathead {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--muted) !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+    order: 2 !important;
+  }
+
+  .stathead .staticon {
+    display: none !important;
   }
 
   .statnum {
     font-size: 20px !important;
+    font-weight: 800 !important;
+    color: var(--text) !important;
+    line-height: 1 !important;
+    order: 1 !important;
+    margin: 0 !important;
   }
 
-  .stathead {
-    font-size: 10px !important;
+  .staticon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
+    font-size: 13px !important;
+    order: 3 !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ocultar texto de tendência no celular para eliminar poluição visual */
+  .trend {
+    display: none !important;
+  }
+
+  /* Ocultar bloco decorativo estático no celular para focar nas escalas */
+  .panel-panorama {
+    display: none !important;
+  }
+
+  /* Ajuste geral dos painéis no celular */
+  .panel {
+    padding: 14px 12px !important;
+    border-radius: 14px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .panelhead {
+    margin-bottom: 12px !important;
+  }
+
+  .panelhead h2 {
+    font-size: 16px !important;
   }
 
   /* Modais com altura perfeita e rolagem suave */
@@ -2653,5 +2749,332 @@ textarea:focus {
 
   .cal-assignees {
     display: none !important;
+  }
+}
+
+/* ==========================================================================
+   TELA DA EQUIPE: ORGANIZAÇÃO MODERNA E CARDS MOBILE
+   ========================================================================== */
+.mobile-team-cards,
+.mobile-only-view {
+  display: none;
+}
+
+.people-panelhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.people-search-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.people-search-wrap .search-ico {
+  position: absolute;
+  left: 12px;
+  width: 17px;
+  height: 17px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.people-search-input {
+  width: 100% !important;
+  padding-left: 38px !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  font-size: 13px !important;
+  border-radius: 10px !important;
+  min-width: 0 !important;
+}
+
+.people-count-pill {
+  padding: 6px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media(max-width: 680px) {
+  .desktop-only-table {
+    display: none !important;
+  }
+
+  .mobile-only-view {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .people-panelhead {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .people-count-pill {
+    padding: 5px 9px;
+    font-size: 10px;
+  }
+
+  /* Card moderno e organizado do voluntário */
+  .team-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  [data-theme="dark"] .team-card {
+    background: var(--surface);
+    border-color: var(--line);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  }
+
+  .team-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .team-card-person {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .team-card-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #e8e4ff;
+    color: #584bc4;
+    font-size: 14px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(99, 85, 216, 0.2);
+  }
+
+  [data-theme="dark"] .team-card-avatar {
+    background: #2a284e;
+    color: #a497ff;
+  }
+
+  .team-card-id {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .team-card-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .team-card-email {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+
+  .team-avail-pill {
+    padding: 4px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .team-avail-pill.available {
+    background: var(--greenbg);
+    color: var(--green);
+    border: 1px solid rgba(36, 155, 114, 0.25);
+  }
+
+  .team-avail-pill.absent {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid rgba(185, 28, 28, 0.25);
+  }
+
+  [data-theme="dark"] .team-avail-pill.absent {
+    background: rgba(185, 28, 28, 0.2);
+    color: #f87171;
+  }
+
+  .team-card-absent-notice {
+    font-size: 11px;
+    color: #b91c1c;
+    background: #fef2f2;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border-left: 3px solid #ef4444;
+  }
+
+  [data-theme="dark"] .team-card-absent-notice {
+    background: rgba(185, 28, 28, 0.15);
+    color: #fca5a5;
+  }
+
+  .team-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .team-meta-phone {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 5px 9px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 12px;
+  }
+
+  .team-meta-wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #25d366;
+    color: #ffffff !important;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(37, 211, 102, 0.25);
+    transition: opacity 0.15s ease;
+  }
+
+  .team-meta-wa:hover {
+    opacity: 0.9;
+  }
+
+  .team-meta-bday {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--amber);
+    background: var(--amberbg);
+    padding: 5px 9px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid rgba(183, 123, 39, 0.25);
+  }
+
+  .team-card-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .team-skill-chip {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--soft);
+    color: var(--accent);
+    border: 1px solid rgba(102, 87, 217, 0.2);
+  }
+
+  [data-theme="dark"] .team-skill-chip {
+    background: rgba(135, 120, 245, 0.16);
+    color: var(--accent2);
+    border-color: rgba(135, 120, 245, 0.3);
+  }
+
+  .team-card-actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    margin-top: 2px;
+  }
+
+  .team-card-actions .btn-edit {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .team-card-actions .btn-edit:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .team-card-actions .btn-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .team-card-actions .btn-delete:hover {
+    background: #fee2e2;
+  }
+
+  [data-theme="dark"] .team-card-actions .btn-delete:hover {
+    background: rgba(239, 68, 68, 0.15);
   }
 }
