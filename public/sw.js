@@ -48,6 +48,14 @@ self.addEventListener('fetch', event => {
   );
 });
 
+// Message handler for triggering notifications from client
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, options } = event.data;
+    self.registration.showNotification(title, options);
+  }
+});
+
 // Notification click handler
 self.addEventListener('notificationclick', event => {
   event.notification.close();

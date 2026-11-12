@@ -269,7 +269,7 @@ export async function deleteActivity(id) {
 }
 
 // ==========================================
-// ESCALAS E ATRIBUIÇÕES
+// ESCALAS E PROGRAMAÇÕES
 // ==========================================
 export async function getScales() {
   checkConfig();
@@ -282,7 +282,7 @@ export async function getScales() {
       place,
       date,
       time,
-      assignments:scale_assignments (
+      assignments:scale_assignments(
         id,
         person_id,
         activity_name,
