@@ -394,6 +394,7 @@ function renderHome() {
 
   // Roster do Dia
   const rosterEl = document.getElementById('todayRoster');
+  const canManage = canManageScales();
   if (rosterEl) {
     rosterEl.innerHTML = `
       <div class="today-roster">
@@ -414,7 +415,15 @@ function renderHome() {
               }).join('') || '<span class="muted small">Equipe ainda não definida</span>'}
             </div>
           </div>
-        `).join('') : '<div class="today-roster-empty">Nenhuma programação para hoje. Sua equipe está sem escala neste dia.</div>'}
+        `).join('') : `
+          <div class="today-roster-peaceful">
+            <div class="peaceful-icon">🕊️</div>
+            <div class="peaceful-text">
+              <strong>Sem escalas agendadas para hoje</strong>
+              <small>Tudo tranquilo na AD Bethânia nesta data. Aproveite para acompanhar as próximas escalas.</small>
+            </div>
+          </div>
+        `}
       </div>
     `;
   }
@@ -428,15 +437,29 @@ function renderHome() {
       .slice(0, 4);
 
     upcomingEl.innerHTML = upcomingList.length ? upcomingList.map(s => `
-      <div class="service">
-        <div class="serviceicon">▣</div>
+      <div class="service home-service-item">
+        <div class="service-date-badge">
+          <b>${new Date(s.date + 'T12:00:00').getDate()}</b>
+          <small>${new Date(s.date + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase()}</small>
+        </div>
         <div class="serviceinfo">
           <b>${s.title}</b>
-          <small>${fmt(s.date)} · ${s.time} · ${s.assignments.length} pessoas</small>
+          <small>${fmt(s.date)} às ${s.time} · ${s.assignments.length} pessoa${s.assignments.length === 1 ? '' : 's'}</small>
         </div>
         <span class="pill purple">${s.type}</span>
       </div>
-    `).join('') : '<div class="empty">Nenhuma programação futura cadastrada.</div>';
+    `).join('') : `
+      <div class="home-upcoming-empty">
+        <div class="upcoming-empty-icon">📅</div>
+        <b>Nenhuma escala futura agendada</b>
+        <small>Todas as frentes de serviço estão prontas para a próxima programação.</small>
+        ${canManage ? '<button class="btn secondary mini btn-plan-upcoming" style="margin-top:12px">＋ Planejar próxima escala</button>' : ''}
+      </div>
+    `;
+
+    upcomingEl.querySelectorAll('.btn-plan-upcoming').forEach(b => {
+      b.onclick = () => openScaleModal();
+    });
   }
 
   // Semana atual
@@ -468,7 +491,6 @@ function renderHome() {
   document.getElementById('navScales').textContent = scales.length;
 
   // Permissão para criar escala (apenas Líder e Coordenação)
-  const canManage = canManageScales();
   const btnHomeNewScale = document.getElementById('btnHomeNewScale');
   if (btnHomeNewScale) btnHomeNewScale.style.display = canManage ? '' : 'none';
   const btnAttentionNewScale = document.getElementById('btnAttentionNewScale');
@@ -2592,6 +2614,11 @@ function initEvents() {
 
   // Atalhos na Home
   document.getElementById('btnHomeNewScale').onclick = () => openScaleModal();
+  const btnHomeMine = document.getElementById('btnHomeMineShortcut');
+  if (btnHomeMine) btnHomeMine.onclick = () => navigate('mine');
+  document.querySelectorAll('.quick-act-btn').forEach(b => {
+    b.onclick = () => navigate(b.dataset.target);
+  });
   document.getElementById('btnGoToCalendar').onclick = () => navigate('calendar');
   document.getElementById('btnGoToCalendarWeek').onclick = () => navigate('calendar');
   document.getElementById('btnAttentionNewScale').onclick = () => openScaleModal();
