@@ -282,6 +282,7 @@ export async function getScales() {
       place,
       date,
       time,
+      notes,
       assignments:scale_assignments(
         id,
         person_id,
@@ -289,7 +290,8 @@ export async function getScales() {
         confirmed,
         status,
         cancellation_reason,
-        cancelled_at
+        cancelled_at,
+        notes
       )
     `)
     .order('date', { ascending: true });
@@ -303,6 +305,7 @@ export async function getScales() {
     place: s.place,
     date: s.date,
     time: s.time,
+    notes: s.notes || '',
     assignments: (s.assignments || []).map(a => ({
       id: a.id,
       person: a.person_id,
@@ -310,7 +313,8 @@ export async function getScales() {
       confirmed: a.confirmed,
       status: a.status || (a.confirmed ? 'confirmed' : 'pending'),
       cancellationReason: a.cancellation_reason || null,
-      cancelledAt: a.cancelled_at || null
+      cancelledAt: a.cancelled_at || null,
+      notes: a.notes || s.notes || ''
     }))
   }));
 }
@@ -324,7 +328,8 @@ export async function createScale(scale, assignments) {
       type: scale.type || 'Culto',
       place: scale.place || 'Templo principal',
       date: scale.date,
-      time: scale.time || '18:30'
+      time: scale.time || '18:30',
+      notes: scale.notes || null
     }])
     .select()
     .single();
@@ -337,7 +342,8 @@ export async function createScale(scale, assignments) {
       person_id: Number(a.person),
       activity_name: a.activity,
       confirmed: false,
-      status: 'pending'
+      status: 'pending',
+      notes: a.notes || scale.notes || null
     }));
 
     const { error: assignError } = await supabase
@@ -359,7 +365,8 @@ export async function updateScale(id, scale, assignments) {
       type: scale.type || 'Culto',
       place: scale.place || 'Templo principal',
       date: scale.date,
-      time: scale.time || '18:30'
+      time: scale.time || '18:30',
+      notes: scale.notes || null
     })
     .eq('id', id);
 
@@ -380,7 +387,8 @@ export async function updateScale(id, scale, assignments) {
       confirmed: Boolean(a.confirmed),
       status: a.status || (a.confirmed ? 'confirmed' : 'pending'),
       cancellation_reason: a.cancellationReason || null,
-      cancelled_at: a.cancelledAt || null
+      cancelled_at: a.cancelledAt || null,
+      notes: a.notes || scale.notes || null
     }));
 
     const { error: assignError } = await supabase

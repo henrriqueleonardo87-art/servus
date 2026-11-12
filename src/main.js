@@ -62,6 +62,54 @@ function notify(text) {
   setTimeout(() => el.classList.remove('show'), 2600);
 }
 
+export function canManageScales() {
+  if (!currentUser) return false;
+  const role = (currentUser.role || '').toLowerCase();
+  return role.includes('líder') || role.includes('lider') || role.includes('coordena');
+}
+
+export function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function getActivityIconSvg(name = '') {
+  const n = (name || '').toLowerCase();
+  if (n.includes('áudio') || n.includes('audio') || n.includes('som') || n.includes('mesa')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 10v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+  }
+  if (n.includes('proje') || n.includes('slide') || n.includes('letra')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  }
+  if (n.includes('transmiss') || n.includes('live') || n.includes('stream')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M4.93 19.07A10 10 0 0 1 2 12a10 10 0 0 1 2.93-7.07M19.07 4.93A10 10 0 0 1 22 12a10 10 0 0 1-2.93 7.07M7.76 16.24A6 6 0 0 1 6 12a6 6 0 0 1 1.76-4.24M16.24 7.76A6 6 0 0 1 18 12a6 6 0 0 1-1.76 4.24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>`;
+  }
+  if (n.includes('foto') || n.includes('fotografia') || n.includes('câmera') || n.includes('camera')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/></svg>`;
+  }
+  if (n.includes('vídeo') || n.includes('video') || n.includes('grava')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><rect x="2" y="4" width="14" height="16" rx="2" stroke="currentColor" stroke-width="2"/><polygon points="22 7 16 12 22 17 22 7" fill="currentColor"/></svg>`;
+  }
+  if (n.includes('social') || n.includes('redes') || n.includes('instagram')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/></svg>`;
+  }
+  if (n.includes('design') || n.includes('arte') || n.includes('visual')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  }
+  if (n.includes('direção') || n.includes('direcao') || n.includes('coord')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg>`;
+  }
+  if (n.includes('recep') || n.includes('apoio') || n.includes('geral')) {
+    return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/><polyline points="17 11 19 13 23 9" stroke="currentColor" stroke-width="2"/></svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+
 function updateProfileUI() {
   if (!currentUser) return;
   const userInitials = initials(currentUser.name);
@@ -343,6 +391,13 @@ function renderHome() {
   document.getElementById('statActivities').textContent = activities.length;
   document.getElementById('navScales').textContent = scales.length;
 
+  // Permissão para criar escala (apenas Líder e Coordenação)
+  const canManage = canManageScales();
+  const btnHomeNewScale = document.getElementById('btnHomeNewScale');
+  if (btnHomeNewScale) btnHomeNewScale.style.display = canManage ? '' : 'none';
+  const btnAttentionNewScale = document.getElementById('btnAttentionNewScale');
+  if (btnAttentionNewScale) btnAttentionNewScale.style.display = canManage ? '' : 'none';
+
   // Confirmações
   const totalAssignments = scales.reduce((acc, s) => acc + s.assignments.length, 0);
   const confirmedAssignments = scales.reduce((acc, s) => acc + s.assignments.filter(a => a.confirmed).length, 0);
@@ -563,6 +618,11 @@ function openNotificationsModal() {
 // RENDERIZAÇÃO: PÁGINA 2 - ESCALAS
 // ==========================================
 function renderScales() {
+  const btnNew = document.getElementById('btnNewScale');
+  if (btnNew) btnNew.style.display = canManageScales() ? '' : 'none';
+  const btnCalNew = document.getElementById('btnCalNewScale');
+  if (btnCalNew) btnCalNew.style.display = canManageScales() ? '' : 'none';
+
   const q = (document.getElementById('scaleSearch')?.value || '').toLowerCase();
   const f = document.getElementById('scaleFilter')?.value || '';
   const today = localISO(new Date());
@@ -582,8 +642,14 @@ function renderScales() {
   tbody.innerHTML = filtered.length ? filtered.map(s => `
     <tr>
       <td>
-        <b>${s.title}</b>
+        <b>${escapeHtml(s.title)}</b>
         <div class="muted small">${s.type} · ${s.place || 'Templo principal'}</div>
+        ${s.notes ? `
+          <div class="scale-notes-row">
+            <span class="scale-notes-tag">Obs:</span>
+            <span class="scale-notes-text">${escapeHtml(s.notes)}</span>
+          </div>
+        ` : ''}
       </td>
       <td>
         ${fmt(s.date)}
@@ -613,10 +679,12 @@ function renderScales() {
         </span>
       </td>
       <td>
-        <div class="actions">
-          <button class="mini btn-edit-scale" data-id="${s.id}">Editar</button>
-          <button class="mini btn-delete-scale" data-id="${s.id}">Excluir</button>
-        </div>
+        ${canManageScales() ? `
+          <div class="actions">
+            <button class="mini btn-edit-scale" data-id="${s.id}">Editar</button>
+            <button class="mini btn-delete-scale" data-id="${s.id}">Excluir</button>
+          </div>
+        ` : '<span class="muted small" style="font-size:11px;color:var(--muted)">Visualização</span>'}
       </td>
     </tr>
   `).join('') : '<tr><td colspan="5"><div class="empty">Nenhuma programação encontrada.</div></td></tr>';
@@ -777,11 +845,16 @@ function renderMine() {
     }
 
     return `
-      <div class="listrow" style="flex-wrap:wrap;gap:12px;padding:14px 12px;border-bottom:1px solid #f0f1f5">
-        <div class="serviceicon">${icon}</div>
+      <div class="listrow" style="flex-wrap:wrap;gap:12px;padding:14px 12px;border-bottom:1px solid var(--line)">
+        <div class="activity-icon-badge">${getActivityIconSvg(item.activity)}</div>
         <div class="grow" style="min-width:180px">
           <b style="font-size:14px">${item.activity}</b>
           <div class="muted small">${item.scale.title} · ${item.scale.place || 'Templo principal'}</div>
+          ${(item.notes || item.scale.notes) ? `
+            <div class="mine-scale-notes">
+              <strong>Obs:</strong> ${escapeHtml(item.notes || item.scale.notes)}
+            </div>
+          ` : ''}
           ${item.cancellationReason ? `<div style="font-size:11px;color:#dc2626;margin-top:3px">Motivo do cancelamento: ${item.cancellationReason}</div>` : ''}
           ${calActions}
         </div>
@@ -984,14 +1057,21 @@ function renderPeople() {
 
             <div class="team-card-meta">
               ${p.phone ? `
-                <a href="tel:${cleanPhone}" class="team-meta-phone">
-                  📞 ${p.phone}
-                </a>
-                ${waUrl ? `
-                  <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="team-meta-wa" title="Conversar no WhatsApp">
-                    💬 WhatsApp
+                <div class="team-phone-group">
+                  <a href="tel:${cleanPhone}" class="team-phone-link">
+                    <svg viewBox="0 0 24 24" fill="none" width="13" height="13" style="color:var(--muted)">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>${p.phone}</span>
                   </a>
-                ` : ''}
+                  ${waUrl ? `
+                    <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="team-meta-wa-icon" title="Conversar no WhatsApp" aria-label="Conversar no WhatsApp">
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.97.58 3.84 1.62 5.43L2 22l4.81-1.68c1.53.94 3.32 1.48 5.23 1.48 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.89-9.91-9.89zm5.79 14.07c-.24.68-1.4 1.25-1.93 1.33-.51.08-1.16.12-3.75-.95-3.3-1.37-5.4-4.73-5.56-4.95-.16-.22-1.33-1.77-1.33-3.38 0-1.61.85-2.4 1.15-2.73.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.49-.08.77.58.28.68.96 2.34 1.04 2.51.08.17.14.37.03.6-.11.22-.17.36-.33.56-.16.2-.34.45-.49.6-.16.16-.33.34-.14.67.19.33.84 1.38 1.8 2.24 1.24 1.1 2.29 1.45 2.62 1.61.33.16.52.14.71-.08.19-.22.82-.96 1.04-1.29.22-.33.44-.28.74-.16.3.11 1.92.9 2.25 1.07.33.16.55.25.63.38.08.14.08.82-.16 1.5z"/>
+                      </svg>
+                    </a>
+                  ` : ''}
+                </div>
               ` : ''}
               ${p.birthday ? `
                 <span class="team-meta-bday">
@@ -1001,8 +1081,10 @@ function renderPeople() {
             </div>
 
             ${skillsList.length ? `
-              <div class="team-card-skills">
-                ${skillsList.map(s => `<span class="team-skill-chip">${s}</span>`).join('')}
+              <div class="team-card-roles-row">
+                <div class="team-roles-tags">
+                  ${skillsList.map(s => `<span class="team-skill-tag">${s}</span>`).join('')}
+                </div>
               </div>
             ` : ''}
 
@@ -1084,22 +1166,22 @@ function renderActivities() {
     const futureAssignments = scales.reduce((n, s) => n + s.assignments.length, 0);
     cardsEl.innerHTML = `
       <div class="stat">
-        <div class="stathead">Atividades cadastradas</div>
+        <div class="stathead">Atividades disponíveis <span class="staticon"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="currentColor" stroke-width="2"/></svg></span></div>
         <div class="statnum">${activities.length}</div>
         <div class="trend">Frentes de serviço</div>
       </div>
       <div class="stat">
-        <div class="stathead">Pessoas na equipe</div>
+        <div class="stathead">Pessoas na equipe <span class="staticon"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/></svg></span></div>
         <div class="statnum">${people.length}</div>
-        <div class="trend">Voluntários cadastrados</div>
+        <div class="trend">Equipe cadastrada</div>
       </div>
       <div class="stat">
-        <div class="stathead">Atribuições futuras</div>
+        <div class="stathead">Atribuições futuras <span class="staticon"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="2"/></svg></span></div>
         <div class="statnum">${futureAssignments}</div>
         <div class="trend">Em todas as escalas</div>
       </div>
       <div class="stat">
-        <div class="stathead">Programações</div>
+        <div class="stathead">Programações <span class="staticon"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke="currentColor" stroke-width="2"/></svg></span></div>
         <div class="statnum">${scales.length}</div>
         <div class="trend">Criadas no sistema</div>
       </div>
@@ -1111,13 +1193,13 @@ function renderActivities() {
     listEl.innerHTML = activities.map(a => {
       const count = scales.reduce((acc, s) => acc + s.assignments.filter(x => x.activity === a.name).length, 0);
       return `
-        <div class="listrow">
-          <div class="serviceicon">${a.icon}</div>
-          <div class="grow">
-            <b>${a.name}</b>
-            <small>${a.desc || 'Atividade da equipe de mídia'}</small>
+        <div class="listrow" style="align-items:center;padding:12px 14px">
+          <div class="activity-icon-badge">${getActivityIconSvg(a.name)}</div>
+          <div class="grow" style="margin-left:12px">
+            <b style="font-size:14px;display:block">${a.name}</b>
+            <small style="color:var(--muted)">${a.desc || 'Atividade da equipe técnica'}</small>
           </div>
-          <span class="pill purple">${count} atribuições</span>
+          <span class="pill purple" style="margin:0 10px">${count} atribuições</span>
           <button class="mini btn-edit-activity" data-id="${a.id}">Editar</button>
         </div>
       `;
@@ -1151,34 +1233,24 @@ async function openPersonModal(id = null) {
   let currentAvail = p.availability || 'Disponível';
 
   const bodyHtml = `
-    <div class="modal-tabs" id="personModalTabs">
-      <button type="button" class="modal-tab-btn active" data-tab="tabId">
-        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="2"/></svg>
-        Identificação & Acesso
-      </button>
-      <button type="button" class="modal-tab-btn" data-tab="tabSkills">
-        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="currentColor" stroke-width="2"/></svg>
-        Funções & Atividades (<span id="skillBadgeCount">${currentSkills.size}</span>)
-      </button>
-      <button type="button" class="modal-tab-btn" data-tab="tabAvail">
-        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/></svg>
-        Disponibilidade & Aniversário
-      </button>
+    <div class="modal-tabs modal-tabs-compact" id="personModalTabs">
+      <button type="button" class="modal-tab-btn active" data-tab="tabId">Perfil</button>
+      <button type="button" class="modal-tab-btn" data-tab="tabSkills">Funções</button>
+      <button type="button" class="modal-tab-btn" data-tab="tabAvail">Agenda</button>
     </div>
 
-    <!-- ABA 1: IDENTIFICAÇÃO & ACESSO -->
+    <!-- ABA 1: PERFIL -->
     <div class="modal-tab-pane active" id="pane-tabId">
-      <div class="avatar-uploader">
-        <div class="avatar-preview-box" id="pavatarBox" style="${currentAvatar ? `background-image:url('${currentAvatar}');background-size:cover;background-position:center;color:transparent;` : ''}">
+      <div class="avatar-compact-row">
+        <div class="avatar-preview-mini" id="pavatarBox" style="${currentAvatar ? `background-image:url('${currentAvatar}');background-size:cover;background-position:center;color:transparent;` : ''}">
           ${currentAvatar ? '' : (p.initials || '👤')}
         </div>
-        <div class="avatar-upload-info">
-          <div class="avatar-upload-title">Foto de identificação</div>
-          <div class="avatar-upload-sub">Importe uma foto da galeria ou câmera para identificar na equipe.</div>
-          <div class="avatar-btn-row">
+        <div class="avatar-compact-info">
+          <div style="font-size:12px;font-weight:700">Foto de identificação</div>
+          <div class="avatar-compact-actions">
             <input type="file" id="pavatarFile" accept="image/*" style="display:none">
-            <button type="button" class="btn secondary mini" id="btnPickAvatar">📷 Escolher foto</button>
-            <button type="button" class="mini btn-danger-mini" id="btnRemoveAvatar" style="${currentAvatar ? '' : 'display:none'}">Remover foto</button>
+            <button type="button" class="btn secondary mini" id="btnPickAvatar" style="padding:4px 8px;font-size:11px">📷 Escolher foto</button>
+            <button type="button" class="mini btn-danger-mini" id="btnRemoveAvatar" style="${currentAvatar ? '' : 'display:none'};padding:4px 8px;font-size:11px">Remover</button>
           </div>
         </div>
       </div>
@@ -1191,14 +1263,13 @@ async function openPersonModal(id = null) {
         <div class="field">
           <label for="pemail">E-mail (Google Agenda) *</label>
           <input type="email" id="pemail" value="${p.email || userCreds?.email || ''}" placeholder="exemplo@gmail.com" required>
-          <div class="muted small" style="font-size:10px">Obrigatório para sincronizar com Google Agenda.</div>
         </div>
         <div class="field">
           <label for="pphone">Telefone / WhatsApp *</label>
           <input id="pphone" value="${p.phone || userCreds?.phone || ''}" placeholder="(31) 99999-9999" required>
         </div>
         <div class="field">
-          <label for="prole">Função / Perfil de Acesso</label>
+          <label for="prole">Função / Perfil</label>
           <select id="prole">
             <option value="Voluntário" ${(userCreds?.role || p.area) === 'Voluntário' ? 'selected' : ''}>Voluntário</option>
             <option value="Líder" ${(userCreds?.role || p.area) === 'Líder' ? 'selected' : ''}>Líder</option>
@@ -1206,12 +1277,11 @@ async function openPersonModal(id = null) {
           </select>
         </div>
         <div class="field">
-          <label for="ppassword">Senha de Acesso ao Sistema</label>
+          <label for="ppassword">Senha de Acesso</label>
           <div style="position:relative;display:flex;align-items:center">
-            <input type="password" id="ppassword" value="${userCreds?.password || ''}" placeholder="${isEditing ? 'Digite para alterar a senha' : 'Criar senha de acesso'}" style="padding-right:38px">
+            <input type="password" id="ppassword" value="${userCreds?.password || ''}" placeholder="${isEditing ? 'Digite para alterar' : 'Criar senha'}" style="padding-right:34px">
             <button type="button" id="btnTogglePassModal" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px" title="Mostrar/ocultar senha">👁</button>
           </div>
-          <div class="muted small" style="font-size:10px">Número e senha usados para login no SERVUS.</div>
         </div>
       </div>
     </div>
@@ -1221,7 +1291,7 @@ async function openPersonModal(id = null) {
       <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <b style="font-size:13px;display:block">O que essa pessoa faz?</b>
-          <div class="muted small">Clique nos cartões para selecionar as áreas aptas:</div>
+          <div class="muted small">Selecione as funções que essa pessoa está apta a exercer:</div>
         </div>
         <button type="button" class="mini" id="btnToggleAllSkills">Selecionar todas</button>
       </div>
@@ -1230,7 +1300,7 @@ async function openPersonModal(id = null) {
           const isSelected = currentSkills.has(a.name);
           return `
             <div class="skill-card-item ${isSelected ? 'selected' : ''}" data-skill="${a.name}">
-              <span class="skill-card-icon">${a.icon || '✳'}</span>
+              <span class="skill-card-icon" style="display:inline-flex;align-items:center;justify-content:center">${getActivityIconSvg(a.name)}</span>
               <span class="skill-card-text" title="${a.name}">${a.name}</span>
               <span class="skill-card-check">✓</span>
             </div>
@@ -1240,7 +1310,7 @@ async function openPersonModal(id = null) {
       <div class="muted small" style="margin-top:10px">Para cadastrar uma nova função, acesse o menu Atividades.</div>
     </div>
 
-    <!-- ABA 3: DISPONIBILIDADE & ANIVERSÁRIO -->
+    <!-- ABA 3: AGENDA & DISPONIBILIDADE -->
     <div class="modal-tab-pane" id="pane-tabAvail">
       <div class="field full">
         <label>Status de disponibilidade geral</label>
@@ -1253,7 +1323,6 @@ async function openPersonModal(id = null) {
       <div class="field full" style="margin-top:8px">
         <label for="pbirthday">🎂 Data de nascimento / Aniversário</label>
         <input type="date" id="pbirthday" value="${p.birthday || ''}">
-        <div class="muted small" style="font-size:10px">Usado para felicitações e lembretes de aniversário da equipe.</div>
       </div>
 
       <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:12px;border:1px solid var(--line)">
@@ -1592,6 +1661,11 @@ function assignmentRow(pid = '', act = '') {
 }
 
 function openScaleModal(id = null) {
+  if (!canManageScales()) {
+    notify('Apenas líderes e coordenação podem criar ou editar escalas.');
+    return;
+  }
+
   const s = scales.find(x => x.id === id) || {};
   const isEditing = Boolean(id);
 
@@ -1622,6 +1696,11 @@ function openScaleModal(id = null) {
       <div class="field">
         <label>Horário</label>
         <input type="time" id="stime" value="${s.time || '18:30'}">
+      </div>
+      <div class="field full">
+        <label for="scnotes">Observações da programação (opcional)</label>
+        <textarea id="scnotes" rows="2" placeholder="Ex.: Traje preto, ensaio 30 min antes, atenção especial à transmissão...">${s.notes || ''}</textarea>
+        <div class="muted small" style="font-size:10px">Essa observação será exibida na escala e enviada no lembrete aos voluntários.</div>
       </div>
     </div>
     <div style="margin:18px 0 9px;display:flex;justify-content:space-between;align-items:center">
@@ -1655,12 +1734,15 @@ function openScaleModal(id = null) {
         return notify('Indisponibilidade cadastrada: ' + unavailable.map(x => x.p.name).join(', ') + '. Ajuste a equipe ou as datas.');
       }
 
+      const notes = document.getElementById('scnotes')?.value.trim() || '';
+
       const scaleData = {
         title,
         type: document.getElementById('stype').value,
         place: document.getElementById('splace').value.trim() || 'Templo principal',
         date,
-        time: document.getElementById('stime').value || '18:30'
+        time: document.getElementById('stime').value || '18:30',
+        notes
       };
 
       try {
@@ -1672,6 +1754,18 @@ function openScaleModal(id = null) {
         closeModal();
         notify('Escala gravada no Supabase com sucesso!');
         await loadDataFromSupabase();
+
+        // Notificar voluntários atribuídos no celular
+        assignments.forEach(a => {
+          const p = findPerson(a.person);
+          if (p) {
+            triggerBrowserNotification(
+              `🔔 Nova escala: ${a.activity}`,
+              `Você foi escalado(a) para ${a.activity} no ${title} (${fmt(date)} às ${scaleData.time}).${notes ? ' Obs: ' + notes : ''}`,
+              `assign-${date}-${a.person}`
+            );
+          }
+        });
       } catch (err) {
         notify('Erro ao salvar escala: ' + err.message);
       }
@@ -1850,6 +1944,7 @@ async function checkScaleNotifications() {
       if (a.status === 'cancelled') return;
 
       const scaleTime = s.time || '18:30';
+      const noteText = (a.notes || s.notes) ? ` · Obs: ${a.notes || s.notes}` : '';
 
       // 1. Notificação no dia da escala (HOJE)
       if (s.date === todayStr) {
@@ -1857,7 +1952,7 @@ async function checkScaleNotifications() {
         if (!localStorage.getItem(key)) {
           triggerBrowserNotification(
             '🔔 É hoje! Escala na AD Bethânia',
-            `Você está escalado(a) hoje para ${a.activity} às ${scaleTime} no ${s.title}. Que Deus abençoe seu serviço!`,
+            `Você está escalado(a) hoje para ${a.activity} às ${scaleTime} no ${s.title}.${noteText} Que Deus abençoe seu serviço!`,
             `scale-today-${a.id}`
           );
           localStorage.setItem(key, 'true');
@@ -1870,7 +1965,7 @@ async function checkScaleNotifications() {
         if (!localStorage.getItem(key)) {
           triggerBrowserNotification(
             '📅 Lembrete: Escala amanhã!',
-            `Você está escalado(a) amanhã para ${a.activity} às ${scaleTime} no ${s.title}. Chegue com antecedência!`,
+            `Você está escalado(a) amanhã para ${a.activity} às ${scaleTime} no ${s.title}.${noteText} Chegue com antecedência!`,
             `scale-1day-${a.id}`
           );
           localStorage.setItem(key, 'true');
@@ -1906,15 +2001,23 @@ let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredInstallPrompt = e;
+  const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth <= 768);
   const btn = document.getElementById('btnInstallPwa');
-  if (btn) btn.style.display = 'flex';
+  if (btn && isMobileDevice) btn.style.display = 'flex';
 });
 
 function initPwa() {
   if ('serviceWorker' in navigator) {
     const registerSw = () => {
-      navigator.serviceWorker.register('/sw.js').then(reg => {
+      navigator.serviceWorker.register('/sw.js').then(async reg => {
         console.log('SERVUS Service Worker registrado com sucesso:', reg.scope);
+        if ('periodicSync' in reg) {
+          try {
+            await reg.periodicSync.register('check-scales-sync', {
+              minInterval: 12 * 60 * 60 * 1000 // 12h
+            });
+          } catch (e) {}
+        }
       }).catch(err => {
         console.warn('SW registration note:', err);
       });
@@ -1930,8 +2033,12 @@ function initPwa() {
   const btn = document.getElementById('btnInstallPwa');
   if (btn) {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (!isStandalone) {
+    const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+
+    if (!isStandalone && isMobileDevice) {
       btn.style.display = 'flex';
+    } else {
+      btn.style.display = 'none';
     }
 
     btn.onclick = async () => {
@@ -2294,7 +2401,20 @@ function initEvents() {
   document.getElementById('btnCalMySchedule').onclick = () => navigate('mine');
 
   // Minha Escala
-  document.getElementById('btnShareMine').onclick = () => {
+  document.getElementById('btnShareMine').onclick = async () => {
+    const currentPerson = findPerson(selectedVolunteerId);
+    const personName = currentPerson ? currentPerson.name : 'Voluntário';
+    const shareText = `Olá! Confira as escalas de ${personName} no SERVUS (AD Regional Bethânia):\n${window.location.origin}/`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Escala de ${personName} | SERVUS`,
+          text: shareText,
+          url: window.location.href
+        });
+        return;
+      } catch (e) {}
+    }
     navigator.clipboard?.writeText(window.location.href);
     notify('Link pessoal copiado para a área de transferência!');
   };

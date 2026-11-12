@@ -53,6 +53,46 @@ self.addEventListener('fetch', event => {
   );
 });
 
+// Push notification handler (disparado mesmo com o app/navegador fechado)
+self.addEventListener('push', event => {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: 'SERVUS - Escala da Equipe', body: event.data.text() };
+    }
+  }
+
+  const title = data.title || 'SERVUS | AD Regional Bethânia';
+  const options = {
+    body: data.body || 'Você possui um novo lembrete de escala ou compromisso na equipe.',
+    icon: '/icon-192.png',
+    badge: '/favicon.png',
+    vibrate: [200, 100, 200],
+    data: data.data || { url: '/' },
+    tag: data.tag || 'servus-push-alert',
+    renotify: true
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Periodic background sync (executa periodicamente em segundo plano no celular)
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'check-scales-sync' || event.tag === 'servus-scale-reminder') {
+    event.waitUntil(
+      self.registration.showNotification('SERVUS | Lembrete de Escala', {
+        body: 'Confira suas escalas e atividades de hoje na AD Regional Bethânia.',
+        icon: '/icon-192.png',
+        badge: '/favicon.png',
+        tag: 'servus-periodic-reminder',
+        data: { url: '/' }
+      })
+    );
+  }
+});
+
 // Message handler for triggering notifications from client
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {

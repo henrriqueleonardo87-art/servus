@@ -311,21 +311,26 @@
         <button class="btn primary" id="btnNewScale">＋ Nova escala</button>
       </div>
       <div class="panel">
-        <div class="panelhead">
-          <div class="toolbar">
-            <input class="search" id="scaleSearch" placeholder="Buscar programação...">
-            <select class="search" id="scaleFilter">
-              <option value="">Todas as programações</option>
-              <option>Culto</option>
-              <option>Evento</option>
-              <option>Ensaio</option>
-              <option>Reunião</option>
-              <option>Outro</option>
-            </select>
+        <div class="panelhead scale-filter-header">
+          <div class="scale-search-row">
+            <div class="scale-search-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" class="search-ico" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <input class="search scale-search-input" id="scaleSearch" placeholder="Buscar por culto, data ou voluntário...">
+            </div>
           </div>
-          <div class="tabs">
-            <button class="active" id="tabScaleAll">Todas</button>
-            <button id="tabScaleUpcoming">Próximas</button>
+          <div class="scale-filter-controls">
+            <select class="scale-select-filter" id="scaleFilter">
+              <option value="">Todas as programações</option>
+              <option value="Culto">Culto</option>
+              <option value="Evento">Evento</option>
+              <option value="Ensaio">Ensaio</option>
+              <option value="Reunião">Reunião</option>
+              <option value="Outro">Outro</option>
+            </select>
+            <div class="scale-segmented-tabs">
+              <button type="button" class="scale-tab-btn active" id="tabScaleAll">Todas</button>
+              <button type="button" class="scale-tab-btn" id="tabScaleUpcoming">Próximas</button>
+            </div>
           </div>
         </div>
         <div class="tablewrap">
@@ -373,17 +378,22 @@
 
     <!-- PÁGINA 4: MINHA ESCALA -->
     <section class="page" id="page-mine">
-      <div class="heading">
-        <div>
+      <div class="heading mine-heading">
+        <div class="mine-heading-text">
           <div class="eyebrow">Área do voluntário</div>
           <h1>Minha escala</h1>
           <div class="sub">Seus compromissos, atividades e orientações em um só lugar.</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="mineVolunteerSelect" class="search" style="min-width:180px;padding:8px 12px;font-size:12px;font-weight:600">
-            <!-- Populado dinamicamente -->
-          </select>
-          <button class="btn secondary" id="btnShareMine">↗ Compartilhar</button>
+        <div class="mine-actions-bar">
+          <div class="mine-select-box">
+            <svg viewBox="0 0 24 24" fill="none" class="mine-select-ico" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <select id="mineVolunteerSelect" class="mine-volunteer-select" title="Selecionar voluntário">
+              <!-- Populado dinamicamente -->
+            </select>
+          </div>
+          <button class="btn-share-icon" id="btnShareMine" type="button" title="Compartilhar escala no WhatsApp" aria-label="Compartilhar escala">
+            <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </div>
       </div>
       <div class="myhero">
