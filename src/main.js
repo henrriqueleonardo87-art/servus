@@ -62,6 +62,63 @@ function fmt(d) {
   return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
 
+export function formatBdayShort(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  const day = parts[parts.length - 1];
+  const monthIdx = parseInt(parts[parts.length - 2], 10) - 1;
+  const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  return `${day} de ${months[monthIdx] || ''}`;
+}
+
+export function formatBdayFull(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  const day = parts[parts.length - 1];
+  const monthIdx = parseInt(parts[parts.length - 2], 10) - 1;
+  const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  return `${day} de ${months[monthIdx] || ''}`;
+}
+
+export function getBirthdayDelta(birthdayStr) {
+  if (!birthdayStr) return { days: 999, isToday: false, isTomorrow: false, label: '' };
+  const parts = birthdayStr.split('-');
+  const birthMonth = parseInt(parts[parts.length - 2], 10) - 1; // 0-11
+  const birthDay = parseInt(parts[parts.length - 1], 10); // 1-31
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  let nextBday = new Date(currentYear, birthMonth, birthDay);
+  const todayMidnight = new Date(currentYear, now.getMonth(), now.getDate());
+
+  if (nextBday < todayMidnight) {
+    nextBday = new Date(currentYear + 1, birthMonth, birthDay);
+  }
+
+  const diffMs = nextBday.getTime() - todayMidnight.getTime();
+  const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  let label = '';
+  if (days === 0) {
+    label = 'É hoje! 🎉';
+  } else if (days === 1) {
+    label = 'Amanhã';
+  } else if (days <= 30) {
+    label = `Em ${days} dias`;
+  } else {
+    label = formatBdayShort(birthdayStr);
+  }
+
+  return {
+    days,
+    isToday: days === 0,
+    isTomorrow: days === 1,
+    label,
+    fullDate: `${String(birthDay).padStart(2, '0')}/${String(birthMonth + 1).padStart(2, '0')}`
+  };
+}
+
 function localISO(date = new Date()) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -449,8 +506,38 @@ function checkUserScaleAlerts() {
     }
   });
 
+  // Checar se há aniversariante hoje na equipe
+  const todayBirthdays = people.filter(p => {
+    if (!p.birthday) return false;
+    return getBirthdayDelta(p.birthday).isToday;
+  });
+
+  const bdayBanner = document.getElementById('homeBirthdayAlert');
+  if (bdayBanner) {
+    if (todayBirthdays.length > 0) {
+      bdayBanner.style.display = 'flex';
+      const bdayNames = todayBirthdays.map(p => p.name).join(', ');
+      const firstBday = todayBirthdays[0];
+      const cleanPhone = (firstBday.phone || '').replace(/\D/g, '');
+      const bdayWaUrl = cleanPhone ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent('Olá ' + firstBday.name + '! Parabéns pelo seu aniversário! Que Deus continue abençoando muito a sua vida e seu serviço na AD Bethânia! 🎉🎂')}` : '';
+
+      bdayBanner.innerHTML = `
+        <div class="scale-alert-content">
+          <span class="scale-alert-icon">🎂</span>
+          <div class="scale-alert-text">
+            <b>Hoje é aniversário de ${bdayNames}! 🎉</b>
+            <small>Dia de festa na equipe! Não deixe de parabenizar e celebrar com o voluntário.</small>
+          </div>
+        </div>
+        ${bdayWaUrl ? `<a href="${bdayWaUrl}" target="_blank" rel="noopener noreferrer" class="btn primary mini" style="padding:8px 14px;background:#25d366;color:#fff;text-decoration:none;font-weight:700;white-space:nowrap">Parabenizar 💬</a>` : ''}
+      `;
+    } else {
+      bdayBanner.style.display = 'none';
+    }
+  }
+
   if (bellDot) {
-    bellDot.style.display = myPending.length > 0 ? 'inline-block' : 'none';
+    bellDot.style.display = (myPending.length > 0 || todayBirthdays.length > 0) ? 'inline-block' : 'none';
   }
 
   if (banner) {
@@ -608,7 +695,49 @@ function openNotificationsModal() {
     scalesHtml += `<p class="muted small" style="margin-top:12px">Você não possui escalas pendentes no momento. Quando a coordenação publicar uma escala com o seu nome, ela aparecerá aqui e você receberá uma notificação.</p>`;
   }
 
-  openModal('Central de Notificações', controlHtml + scalesHtml, 'Ir para Minha Escala', () => {
+  // Seção de Aniversários da equipe no modal de notificações
+  let bdaysHtml = '';
+  const upcomingBdays = people
+    .filter(p => p.birthday)
+    .map(p => ({ ...p, delta: getBirthdayDelta(p.birthday) }))
+    .sort((a, b) => a.delta.days - b.delta.days)
+    .slice(0, 4);
+
+  if (upcomingBdays.length > 0) {
+    bdaysHtml = `
+      <h3 style="margin:20px 0 10px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">
+        <span>🎂</span> Próximos Aniversariantes da Equipe
+      </h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${upcomingBdays.map(p => {
+          const isToday = p.delta.isToday;
+          const cleanPhone = (p.phone || '').replace(/\D/g, '');
+          const waUrl = cleanPhone ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent('Olá ' + p.name + '! Parabéns pelo seu aniversário! Que Deus continue abençoando muito a sua vida e seu serviço na AD Bethânia! 🎉🎂')}` : '';
+          return `
+            <div style="background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:18px">${isToday ? '🎉' : '🎂'}</span>
+                <div>
+                  <b style="font-size:13px;display:block">${p.name}</b>
+                  <small class="muted">${formatBdayFull(p.birthday)}</small>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span class="pill ${isToday ? 'confirmed' : 'pending'}" style="font-size:11px;font-weight:700">
+                  ${p.delta.label}
+                </span>
+                ${(isToday && waUrl) ? `
+                  <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="mini" style="background:#25d366;color:#fff;text-decoration:none;font-weight:700;padding:4px 8px;border-radius:6px;font-size:11px">💬 Parabenizar</a>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  openModal('Central de Notificações', controlHtml + scalesHtml + bdaysHtml, 'Ir para Minha Escala', () => {
     closeModal();
     if (currentUser?.personId) {
       selectedVolunteerId = currentUser.personId;
@@ -1074,27 +1203,23 @@ function renderPeople() {
               </div>
             ` : ''}
 
-            <div class="team-card-meta">
+            <div class="team-card-meta-clean">
               ${p.phone ? `
-                <div class="team-phone-group">
-                  <a href="tel:${cleanPhone}" class="team-phone-link">
-                    <svg viewBox="0 0 24 24" fill="none" width="13" height="13" style="color:var(--muted)">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <a href="tel:${cleanPhone}" class="team-clean-phone" title="Ligar para ${p.name}">
+                  ${p.phone}
+                </a>
+                ${waUrl ? `
+                  <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="team-clean-wa" title="Conversar no WhatsApp" aria-label="Conversar no WhatsApp">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13">
+                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.97.58 3.84 1.62 5.43L2 22l4.81-1.68c1.53.94 3.32 1.48 5.23 1.48 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.89-9.91-9.89zm5.79 14.07c-.24.68-1.4 1.25-1.93 1.33-.51.08-1.16.12-3.75-.95-3.3-1.37-5.4-4.73-5.56-4.95-.16-.22-1.33-1.77-1.33-3.38 0-1.61.85-2.4 1.15-2.73.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.49-.08.77.58.28.68.96 2.34 1.04 2.51.08.17.14.37.03.6-.11.22-.17.36-.33.56-.16.2-.34.45-.49.6-.16.16-.33.34-.14.67.19.33.84 1.38 1.8 2.24 1.24 1.1 2.29 1.45 2.62 1.61.33.16.52.14.71-.08.19-.22.82-.96 1.04-1.29.22-.33.44-.28.74-.16.3.11 1.92.9 2.25 1.07.33.16.55.25.63.38.08.14.08.82-.16 1.5z"/>
                     </svg>
-                    <span>${p.phone}</span>
                   </a>
-                  ${waUrl ? `
-                    <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="team-meta-wa-icon" title="Conversar no WhatsApp" aria-label="Conversar no WhatsApp">
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
-                        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.97.58 3.84 1.62 5.43L2 22l4.81-1.68c1.53.94 3.32 1.48 5.23 1.48 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.89-9.91-9.89zm5.79 14.07c-.24.68-1.4 1.25-1.93 1.33-.51.08-1.16.12-3.75-.95-3.3-1.37-5.4-4.73-5.56-4.95-.16-.22-1.33-1.77-1.33-3.38 0-1.61.85-2.4 1.15-2.73.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.49-.08.77.58.28.68.96 2.34 1.04 2.51.08.17.14.37.03.6-.11.22-.17.36-.33.56-.16.2-.34.45-.49.6-.16.16-.33.34-.14.67.19.33.84 1.38 1.8 2.24 1.24 1.1 2.29 1.45 2.62 1.61.33.16.52.14.71-.08.19-.22.82-.96 1.04-1.29.22-.33.44-.28.74-.16.3.11 1.92.9 2.25 1.07.33.16.55.25.63.38.08.14.08.82-.16 1.5z"/>
-                      </svg>
-                    </a>
-                  ` : ''}
-                </div>
+                ` : ''}
               ` : ''}
+              ${p.phone && p.birthday ? `<span class="team-clean-sep">·</span>` : ''}
               ${p.birthday ? `
-                <span class="team-meta-bday">
-                  🎂 ${fmt(p.birthday)}
+                <span class="team-clean-bday" title="Aniversário: ${formatBdayFull(p.birthday)}">
+                  🎂 ${formatBdayShort(p.birthday)}
                 </span>
               ` : ''}
             </div>
@@ -1136,44 +1261,51 @@ function renderBirthdays() {
   const box = document.getElementById('birthdayList');
   if (!box) return;
 
-  const now = new Date();
-  const todayVal = now.getMonth() * 100 + now.getDate();
-
   const births = people
     .filter(p => p.birthday)
     .map(p => {
-      const d = new Date(p.birthday + 'T12:00:00');
-      const key = d.getMonth() * 100 + d.getDate();
-      let delta = key - todayVal;
-      if (delta < 0) delta += 1232;
-      return { p, delta, date: d };
+      const deltaInfo = getBirthdayDelta(p.birthday);
+      return { p, ...deltaInfo };
     })
-    .sort((a, b) => a.delta - b.delta)
+    .sort((a, b) => a.days - b.days)
     .slice(0, 6);
 
-  box.innerHTML = births.length ? births.map(({ p, delta, date }) => `
-    <div class="listrow">
-      <div class="serviceicon">🎂</div>
-      <div class="grow">
-        <b>${p.name}</b>
-        <small>${date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })} · ${p.area || 'Voluntário'}</small>
-      </div>
-      <span class="pill ${delta === 0 ? '' : 'purple'}">
-        ${delta === 0 ? 'É hoje!' : delta === 1 ? 'Amanhã' : `Em ${delta} dias`}
-      </span>
-      ${delta <= 7 ? `
-        <button class="mini btn-warn-bday" data-name="${p.name}" data-delta="${delta}">Avisar</button>
-      ` : ''}
-    </div>
-  `).join('') : '<div class="empty">Cadastre a data de aniversário nos perfis para ver os próximos lembretes.</div>';
+  box.innerHTML = births.length ? births.map(({ p, days, isToday, isTomorrow, label }) => {
+    let pillClass = 'purple';
+    let pillText = label;
+    if (isToday) {
+      pillClass = 'confirmed';
+      pillText = 'É hoje! 🎉';
+    } else if (isTomorrow) {
+      pillClass = 'pending';
+      pillText = 'Amanhã';
+    } else if (days <= 30) {
+      pillClass = 'purple';
+      pillText = `Em ${days} dias`;
+    } else {
+      pillClass = 'purple';
+      pillText = formatBdayShort(p.birthday);
+    }
 
-  box.querySelectorAll('.btn-warn-bday').forEach(b => {
-    b.onclick = () => {
-      const d = Number(b.dataset.delta);
-      const text = `Lembrete: aniversário de ${b.dataset.name} ${d === 0 ? 'hoje' : d === 1 ? 'amanhã' : 'em ' + d + ' dias'}!`;
-      notify(text);
-    };
-  });
+    const cleanPhone = (p.phone || '').replace(/\D/g, '');
+    const waCongratsUrl = cleanPhone ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent('Olá ' + p.name + '! Parabéns pelo seu aniversário! Que Deus continue abençoando muito a sua vida e seu serviço na AD Bethânia! 🎉🎂')}` : '';
+
+    return `
+      <div class="listrow" style="align-items:center;padding:12px 14px">
+        <div class="serviceicon" style="font-size:20px">${isToday ? '🎉' : '🎂'}</div>
+        <div class="grow" style="margin-left:12px">
+          <b style="font-size:14px;display:block">${p.name}</b>
+          <small style="color:var(--muted)">${formatBdayFull(p.birthday)} · ${(p.skills && p.skills.length) ? p.skills.join(', ') : (p.area || 'Equipe SERVUS')}</small>
+        </div>
+        <span class="pill ${pillClass}" style="margin:0 10px;font-weight:700">
+          ${pillText}
+        </span>
+        ${(isToday && waCongratsUrl) ? `
+          <a href="${waCongratsUrl}" target="_blank" rel="noopener noreferrer" class="mini" style="background:#25d366;color:#fff;text-decoration:none;font-weight:700;padding:6px 10px;border-radius:8px">Parabenizar 💬</a>
+        ` : ''}
+      </div>
+    `;
+  }).join('') : '<div class="empty">Cadastre as datas de aniversário nos perfis para acompanhar as celebrações da equipe.</div>';
 }
 
 // ==========================================
@@ -1995,17 +2127,31 @@ async function checkScaleNotifications() {
 }
 
 async function checkBirthdayNotifications() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!('Notification' in window)) return;
+
+  // Ativação automática: se permissão ainda for 'default', solicita automaticamente ao usuário
+  if (Notification.permission === 'default') {
+    try {
+      await Notification.requestPermission();
+    } catch (e) {}
+  }
+
+  if (Notification.permission !== 'granted') return;
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const notifiedKeys = await api.getNotifiedKeys();
 
   people.filter(p => p.birthday).forEach(async p => {
-    const d = new Date(p.birthday + 'T12:00:00');
-    if (d.getMonth() === now.getMonth() && d.getDate() === now.getDate()) {
-      const key = `${p.id}-${currentYear}`;
+    const delta = getBirthdayDelta(p.birthday);
+    if (delta.isToday) {
+      const key = `bday-${p.id}-${currentYear}`;
       if (!notifiedKeys.includes(key)) {
-        triggerBrowserNotification('Aniversário na equipe 🎂', 'Hoje é aniversário de ' + p.name + '!', `bday-${p.id}`);
+        triggerBrowserNotification(
+          '🎂 Aniversário na equipe hoje!',
+          `Hoje é aniversário de ${p.name}! Não deixe de enviar uma mensagem e parabenizá-lo(a).`,
+          `bday-${p.id}`
+        );
         await api.saveNotifiedKey(key);
       }
     }
@@ -2496,7 +2642,8 @@ function initEvents() {
   // Equipe
   document.getElementById('btnNewPerson').onclick = () => openPersonModal();
   document.getElementById('peopleSearch').oninput = renderPeople;
-  document.getElementById('btnEnableBirthdayNotif').onclick = enableBirthdayNotifications;
+  const btnEnableBday = document.getElementById('btnEnableBirthdayNotif');
+  if (btnEnableBday) btnEnableBday.onclick = enableBirthdayNotifications;
 
   // Atividades
   document.getElementById('btnNewActivity').onclick = () => openActivityModal();
