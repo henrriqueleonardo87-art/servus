@@ -259,6 +259,31 @@ button {
   background: var(--surface2);
 }
 
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@keyframes spinRefresh {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spin-refresh {
+  animation: spinRefresh 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-refresh-screen {
+  transition: transform 0.2s ease, background 0.15s ease;
+  color: var(--text);
+}
+
+.btn-refresh-screen:active {
+  transform: scale(0.92);
+}
+
 .dot {
   position: absolute;
   width: 7px;

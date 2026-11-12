@@ -2225,6 +2225,39 @@ function initEvents() {
     backdrop.onclick = closeSidebarMobile;
   }
 
+  // Botões de Atualizar Página e Dados (Topo e Home)
+  let lastRefreshClickTime = 0;
+  const triggerPageRefresh = async () => {
+    const now = Date.now();
+    const allIcons = document.querySelectorAll('.btn-refresh-screen svg');
+    allIcons.forEach(svg => svg.classList.add('spin-refresh'));
+
+    // Se der dois toques rápidos (menos de 1.2s), faz recarregamento completo do navegador
+    if (now - lastRefreshClickTime < 1200) {
+      notify('Recarregando página...');
+      setTimeout(() => window.location.reload(), 250);
+      return;
+    }
+    lastRefreshClickTime = now;
+
+    try {
+      notify('Atualizando dados...');
+      await loadDataFromSupabase();
+      notify('Página e dados atualizados com sucesso!');
+    } catch (err) {
+      console.warn('Erro ao sincronizar, recarregando navegador:', err);
+      window.location.reload();
+    } finally {
+      setTimeout(() => {
+        allIcons.forEach(svg => svg.classList.remove('spin-refresh'));
+      }, 700);
+    }
+  };
+
+  document.querySelectorAll('.btn-refresh-screen').forEach(btn => {
+    btn.onclick = triggerPageRefresh;
+  });
+
   // Botões do Topo (Notificações e Avisos)
   document.getElementById('btnTopBell').onclick = () => {
     openNotificationsModal();
